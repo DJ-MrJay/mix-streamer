@@ -1,16 +1,32 @@
+'use client'
+
+import { usePlayer } from '@/hooks/use-player'
+
 type Mix = {
   id: string
   title: string
-  description: string | null
-  cover_image_url: string | null
+  drive_file_id: string
 }
 
 export default function MixCard({ mix }: { mix: Mix }) {
+  const setTrack = usePlayer((s) => s.setTrack)
+
   return (
-    <div className="rounded-xl overflow-hidden border p-3">
-      <div className="aspect-square bg-gray-200 rounded-lg mb-3" />
+    <div className="border p-3 rounded-xl">
       <h3 className="font-medium">{mix.title}</h3>
-      <p className="text-sm text-gray-500">{mix.description}</p>
+
+      <button
+        className="text-sm mt-2"
+        onClick={() =>
+          setTrack({
+            id: mix.id,
+            title: mix.title,
+            drive_file_id: mix.drive_file_id,
+          })
+        }
+      >
+        Play
+      </button>
     </div>
   )
 }
