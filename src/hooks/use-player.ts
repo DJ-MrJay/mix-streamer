@@ -1,22 +1,22 @@
-import { create } from 'zustand'
+import { create } from "zustand";
 
 type Track = {
-  id: string
-  title: string
-  drive_file_id: string
-  cover_image_url?: string | null
-}
+  id: string;
+  title: string;
+  drive_file_id: string;
+  cover_image_url?: string | null;
+};
 
 type PlayerState = {
-  currentTrack: Track | null
-  isPlaying: boolean
-  audio: HTMLAudioElement | null
+  currentTrack: Track | null;
+  isPlaying: boolean;
+  audio: HTMLAudioElement | null;
 
-  setTrack: (track: Track) => void
-  play: () => void
-  pause: () => void
-  toggle: () => void
-}
+  setTrack: (track: Track) => void;
+  play: () => void;
+  pause: () => void;
+  toggle: () => void;
+};
 
 export const usePlayer = create<PlayerState>((set, get) => ({
   currentTrack: null,
@@ -24,36 +24,36 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   audio: null,
 
   setTrack: (track) => {
-    const audio = new Audio()
+    const audio = new Audio(`/api/stream/${track.id}`);
 
     set({
       currentTrack: track,
       audio,
       isPlaying: true,
-    })
+    });
 
-    get().play()
+    audio.play();
   },
 
   play: () => {
-    const audio = get().audio
-    if (!audio) return
+    const audio = get().audio;
+    if (!audio) return;
 
-    audio.play()
-    set({ isPlaying: true })
+    audio.play();
+    set({ isPlaying: true });
   },
 
   pause: () => {
-    const audio = get().audio
-    if (!audio) return
+    const audio = get().audio;
+    if (!audio) return;
 
-    audio.pause()
-    set({ isPlaying: false })
+    audio.pause();
+    set({ isPlaying: false });
   },
 
   toggle: () => {
-    const { isPlaying, play, pause } = get()
-    if (isPlaying) pause()
-    else play()
+    const { isPlaying, play, pause } = get();
+    if (isPlaying) pause();
+    else play();
   },
-}))
+}));
