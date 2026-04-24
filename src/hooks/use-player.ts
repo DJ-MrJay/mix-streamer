@@ -1,59 +1,75 @@
-import { create } from "zustand";
+import { create } from 'zustand'
 
-type Track = {
-  id: string;
-  title: string;
-  drive_file_id: string;
-  cover_image_url?: string | null;
-};
+interface PlayerState {
+  currentTrack: any
+  audio: HTMLAudioElement | null
+  isPlaying: boolean
+  currentTime: number
+  duration: number
 
-type PlayerState = {
-  currentTrack: Track | null;
-  isPlaying: boolean;
-  audio: HTMLAudioElement | null;
-
-  setTrack: (track: Track) => void;
-  play: () => void;
-  pause: () => void;
-  toggle: () => void;
-};
+  setTrack: (track: any) => void
+  toggle: () => void
+  seek: (time: number) => void
+}
 
 export const usePlayer = create<PlayerState>((set, get) => ({
   currentTrack: null,
-  isPlaying: false,
   audio: null,
+  isPlaying: false,
+  currentTime: 0,
+  duration: 0,
 
   setTrack: (track) => {
-    const audio = new Audio(`/api/stream/${track.id}`);
+    const currentAudio = get().audio
+
+    if (currentAudio) {
+      currentAudio.pause()
+      currentAudio.currentTime = 0
+    }
+
+    const audio = new Audio(`/api/stream/${track.id}`)
+
+    audio.addEventListener('timeupdate', () => {
+      set({ currentTime: audio.currentTime })
+    })
+
+    audio.addEventListener('loadedmetadata', () => {
+      set({ duration: audio.duration })
+    })
+
+    audio.addEventListener('ended', () => {
+      set({ isPlaying: false })
+    })
 
     set({
       currentTrack: track,
       audio,
       isPlaying: true,
-    });
+      currentTime: 0,
+      duration: 0,
+    })
 
-    audio.play();
-  },
-
-  play: () => {
-    const audio = get().audio;
-    if (!audio) return;
-
-    audio.play();
-    set({ isPlaying: true });
-  },
-
-  pause: () => {
-    const audio = get().audio;
-    if (!audio) return;
-
-    audio.pause();
-    set({ isPlaying: false });
+    audio.play()
   },
 
   toggle: () => {
-    const { isPlaying, play, pause } = get();
-    if (isPlaying) pause();
-    else play();
+    const { audio, isPlaying } = get()
+    if (!audio) return
+
+    if (isPlaying) {
+      audio.pause()
+      set({ isPlaying: false })
+    } else {
+      audio.play()
+      set({ isPlaying: true })
+    }
   },
-}));
+
+  seek: (time) => {
+    const { audio } = get()
+    if (!audio) return
+
+    audio.currentTime = time
+    set({ currentTime: time })
+  },
+}))
