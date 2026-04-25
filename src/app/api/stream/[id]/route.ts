@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream'
 import { NextRequest } from 'next/server'
 import { drive } from '@/lib/google-drive'
 import { supabase } from '@/lib/supabase'
@@ -94,7 +95,9 @@ export async function GET(
       }
     )
 
-    return new Response(response.data as any, {
+    const stream = Readable.toWeb(response.data as Readable) as unknown as BodyInit
+
+    return new Response(stream, {
       status: statusCode,
       headers,
     })

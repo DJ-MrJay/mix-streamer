@@ -27,18 +27,18 @@ export default function MixCard({ mix }: { mix: Mix }) {
   } = usePlayer()
 
   const [imageError, setImageError] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
 
   const isCurrentTrack = currentTrack?.id === mix.id
   const isCurrentlyPlaying = isCurrentTrack && isPlaying
   const isCurrentlyLoading = isCurrentTrack && isLoading
 
-  // Generate fallback gradient
-  const getGradientColors = (id: string) => {
+  const getGradientStyle = (id: string) => {
     const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
     const hue1 = hash % 360
     const hue2 = (hue1 + 40) % 360
-    return `from-[hsl(${hue1},70%,50%)] to-[hsl(${hue2},70%,45%)]`
+    return {
+      backgroundImage: `linear-gradient(135deg, hsl(${hue1} 70% 44%), hsl(${hue2} 72% 34%))`,
+    }
   }
 
   // Extract artist if format is "Artist - Title"
@@ -86,16 +86,12 @@ export default function MixCard({ mix }: { mix: Mix }) {
   return (
     <div
       onClick={handleCardClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`group relative bg-gradient-to-br ${getGradientColors(
-        mix.id
-      )} rounded-xl overflow-hidden transition-all duration-300 hover:shadow-2xl cursor-pointer ${
-        isCurrentTrack ? 'ring-2 ring-blue-500 shadow-lg shadow-blue-500/30' : ''
+      className={`group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-[0_18px_40px_rgba(0,0,0,0.24)] transition-all duration-300 hover:-translate-y-1 hover:border-foreground/15 hover:shadow-[0_24px_48px_rgba(0,0,0,0.32)] ${
+        isCurrentTrack ? 'border-primary/30 ring-1 ring-primary/30' : ''
       }`}
     >
       {/* Album Art */}
-      <div className="relative aspect-square overflow-hidden bg-black/20">
+      <div className="relative aspect-square overflow-hidden bg-muted">
         {mix.cover_image_url && !imageError ? (
           <img
             src={mix.cover_image_url}
@@ -105,10 +101,13 @@ export default function MixCard({ mix }: { mix: Mix }) {
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center">
-            <Music size={64} className="text-black/40 mb-2" />
-            <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
-              <Headphones size={32} className="text-black/40" />
+          <div
+            className="flex h-full w-full flex-col items-center justify-center"
+            style={getGradientStyle(mix.id)}
+          >
+            <Music size={64} className="mb-2 text-white/35" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-black/15 backdrop-blur-sm">
+              <Headphones size={32} className="text-white/55" />
             </div>
           </div>
         )}
@@ -119,32 +118,31 @@ export default function MixCard({ mix }: { mix: Mix }) {
         {/* Play button */}
         <button
           onClick={handlePlayClick}
-          className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
-            isHovered ? 'opacity-100' : 'opacity-0'
-          }`}
+          type="button"
+          className="absolute inset-0 flex items-center justify-center opacity-100 transition-all duration-300 md:opacity-0 md:group-hover:opacity-100"
         >
-          <div className="bg-white rounded-full p-4 transform transition-transform hover:scale-110 shadow-2xl">
+          <div className="rounded-full bg-primary p-4 text-primary-foreground shadow-2xl transition-transform md:group-hover:scale-110">
             {isCurrentlyLoading ? (
-              <Loader2 size={32} className="text-black animate-spin" />
+              <Loader2 size={32} className="animate-spin" />
             ) : isCurrentlyPlaying ? (
-              <Pause size={32} fill="black" />
+              <Pause size={32} fill="currentColor" />
             ) : (
-              <Play size={32} fill="black" className="ml-1" />
+              <Play size={32} fill="currentColor" className="ml-1" />
             )}
           </div>
         </button>
 
         {/* Duration */}
         {duration && (
-          <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-md text-xs text-white font-mono">
+          <div className="absolute right-2 bottom-2 rounded-md border border-border/60 bg-background/80 px-2 py-1 font-mono text-xs text-foreground backdrop-blur-sm">
             {duration}
           </div>
         )}
 
         {/* Playing badge */}
         {isCurrentTrack && isPlaying && (
-          <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+          <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">
+            <div className="h-2 w-2 rounded-full bg-current animate-pulse" />
             <span>PLAYING</span>
           </div>
         )}
@@ -153,24 +151,22 @@ export default function MixCard({ mix }: { mix: Mix }) {
       {/* Info */}
       <div className="p-4">
         <h3
-          className="text-white font-semibold text-base truncate mb-1"
+          className="mb-1 truncate text-base font-semibold text-foreground"
           title={trackInfo.title}
         >
           {trackInfo.title}
         </h3>
 
         {trackInfo.artist && (
-          <p className="text-white/70 text-sm truncate">
-            {trackInfo.artist}
-          </p>
+          <p className="truncate text-sm text-muted-foreground">{trackInfo.artist}</p>
         )}
 
         {/* Progress bar */}
         {isCurrentTrack && (
           <div className="mt-3">
-            <div className="h-1 bg-white/20 rounded-full overflow-hidden">
+            <div className="h-1 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full bg-white transition-all duration-300"
+                className="h-full bg-primary transition-all duration-300"
                 style={{
                   width: `${
                     (usePlayer.getState().currentTime /
@@ -183,15 +179,6 @@ export default function MixCard({ mix }: { mix: Mix }) {
           </div>
         )}
       </div>
-
-      <style jsx>{`
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-      `}</style>
     </div>
   )
 }

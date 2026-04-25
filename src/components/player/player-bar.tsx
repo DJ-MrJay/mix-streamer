@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePlayer } from "@/hooks/use-player";
 import {
   Play,
@@ -13,13 +13,13 @@ import {
   X,
 } from "lucide-react";
 
+type AudioContextConstructor = typeof AudioContext;
+
 export default function PlayerBar() {
   const {
     currentTrack,
     isPlaying,
     toggle,
-    play,
-    pause,
     seek,
     currentTime,
     duration,
@@ -32,16 +32,19 @@ export default function PlayerBar() {
   const [isMuted, setIsMuted] = useState(false);
   const [showMobileProgress, setShowMobileProgress] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Handle mobile audio unlock
   useEffect(() => {
     const unlockAudio = async () => {
       // Create a silent audio context to unlock audio on mobile
-      const AudioContext =
-        window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioContext) {
-        const context = new AudioContext();
+      const audioContextConstructor =
+        window.AudioContext ||
+        (window as Window & {
+          webkitAudioContext?: AudioContextConstructor;
+        }).webkitAudioContext;
+
+      if (audioContextConstructor) {
+        const context = new audioContextConstructor();
         if (context.state === "suspended") {
           await context.resume();
         }

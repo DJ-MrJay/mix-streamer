@@ -1,7 +1,15 @@
 import { create } from 'zustand'
 
+export interface PlayerTrack {
+  id: string
+  title: string
+  drive_file_id: string
+  cover_image_url?: string
+  artist?: string | null
+}
+
 interface PlayerState {
-  currentTrack: any
+  currentTrack: PlayerTrack | null
   audio: HTMLAudioElement | null
   isPlaying: boolean
   currentTime: number
@@ -9,7 +17,7 @@ interface PlayerState {
   isLoading: boolean
   error: string | null
 
-  setTrack: (track: any) => void
+  setTrack: (track: PlayerTrack) => Promise<void>
   toggle: () => void
   seek: (time: number) => void
   play: () => Promise<void>
@@ -67,7 +75,7 @@ export const usePlayer = create<PlayerState>((set, get) => ({
       set({ isPlaying: false, currentTime: 0 })
     }
 
-    const onError = (e: Event) => {
+    const onError = () => {
       const error = audio.error
       let errorMessage = 'Unknown error'
       
@@ -109,17 +117,6 @@ export const usePlayer = create<PlayerState>((set, get) => ({
     audio.addEventListener('error', onError)
     audio.addEventListener('waiting', onWaiting)
     audio.addEventListener('playing', onPlaying)
-
-    // Store cleanup function for later
-    const cleanup = () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate)
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
-      audio.removeEventListener('canplay', onCanPlay)
-      audio.removeEventListener('ended', onEnded)
-      audio.removeEventListener('error', onError)
-      audio.removeEventListener('waiting', onWaiting)
-      audio.removeEventListener('playing', onPlaying)
-    }
 
     set({ 
       currentTrack: track, 

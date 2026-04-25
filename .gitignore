@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# build checks
+.buildcheck/
+.buildcheck2/
+.buildcheck3/
+.buildcheck4/

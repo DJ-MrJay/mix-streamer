@@ -17,7 +17,7 @@ export default async function MixPage({
     .single()
 
   if (!mix) {
-    return <div className="p-6">Mix not found</div>
+    return <div className="p-6 text-foreground">Mix not found</div>
   }
 
   // Optional: extract artist if format is "Artist - Title"
@@ -44,9 +44,9 @@ export default async function MixPage({
   }
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-screen bg-background pb-28 text-foreground">
       {/* HERO */}
-      <div className="relative">
+      <div className="relative overflow-hidden border-b border-border">
         {/* Background blur */}
         {mix.cover_image_url && (
           <div
@@ -55,34 +55,40 @@ export default async function MixPage({
           />
         )}
 
-        <div className="relative max-w-6xl mx-auto px-4 pt-8 pb-6">
-          <div className="flex flex-col md:flex-row gap-6 items-start md:items-end">
+        <div className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/75 to-background" />
+
+        <div className="relative mx-auto max-w-6xl px-4 pt-8 pb-8">
+          <div className="flex flex-col items-start gap-6 md:flex-row md:items-end">
             {/* Cover */}
-            <img
-              src={mix.cover_image_url}
-              alt={mix.title}
-              className="w-full max-w-xs md:w-64 aspect-square object-cover rounded-xl shadow-2xl"
-            />
+            {mix.cover_image_url ? (
+              <img
+                src={mix.cover_image_url}
+                alt={mix.title}
+                className="aspect-square w-full max-w-xs rounded-2xl border border-border object-cover shadow-2xl md:w-64"
+              />
+            ) : (
+              <div className="flex aspect-square w-full max-w-xs items-center justify-center rounded-2xl border border-border bg-card text-muted-foreground shadow-2xl md:w-64">
+                DJ Mix
+              </div>
+            )}
 
             {/* Info */}
             <div className="flex-1">
-              <p className="text-xs uppercase text-gray-400 mb-2">
+              <p className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
                 DJ Mix
               </p>
 
-              <h1 className="text-2xl md:text-4xl font-bold text-white mb-2">
+              <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground md:text-5xl">
                 {trackInfo.title}
               </h1>
 
               {trackInfo.artist && (
-                <p className="text-gray-300 mb-2">
-                  {trackInfo.artist}
-                </p>
+                <p className="mb-2 text-base text-muted-foreground md:text-lg">{trackInfo.artist}</p>
               )}
 
-              <div className="text-sm text-gray-400 mb-4">
-                {formatDuration(mix.duration)}
-              </div>
+              {mix.duration && (
+                <div className="mb-4 text-sm text-muted-foreground">{formatDuration(mix.duration)}</div>
+              )}
 
               {/* PLAY BUTTON */}
               <PlayButton mix={mix} />
@@ -92,29 +98,25 @@ export default async function MixPage({
       </div>
 
       {/* CONTENT */}
-      <div className="max-w-6xl mx-auto px-4 mt-6">
+      <div className="mx-auto mt-6 flex max-w-6xl flex-col gap-6 px-4">
         {/* Description */}
         {mix.description && (
-          <div className="mb-8">
-            <h2 className="text-white text-lg font-semibold mb-2">
+          <section className="rounded-3xl border border-border bg-card/80 p-5 shadow-lg backdrop-blur-sm">
+            <h2 className="mb-2 text-lg font-semibold text-foreground">
               About this mix
             </h2>
-            <p className="text-gray-400 leading-relaxed">
-              {mix.description}
-            </p>
-          </div>
+            <p className="leading-relaxed text-muted-foreground">{mix.description}</p>
+          </section>
         )}
 
         {/* Placeholder tracklist */}
-        <div>
-          <h2 className="text-white text-lg font-semibold mb-4">
+        <section className="rounded-3xl border border-border bg-card/80 p-5 shadow-lg backdrop-blur-sm">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Tracklist
           </h2>
 
-          <div className="text-gray-500 text-sm">
-            Tracklist coming soon
-          </div>
-        </div>
+          <div className="text-sm text-muted-foreground">Tracklist coming soon</div>
+        </section>
       </div>
     </div>
   )
