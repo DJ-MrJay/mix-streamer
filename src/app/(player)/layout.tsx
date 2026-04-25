@@ -1,15 +1,12 @@
 import PlayerBar from '@/components/player/player-bar'
 
-export default function PlayerLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function PlayerLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col min-h-dvh">
-      <main className="flex-1 pb-20">{children}</main>
-
-      <PlayerBar />
+    <div className="min-h-dvh flex flex-col">
+      <main className="flex-1 pb-24">
+        {children}
+        <PlayerBar />
+      </main>
     </div>
   )
 }

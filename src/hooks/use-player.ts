@@ -6,10 +6,14 @@ interface PlayerState {
   isPlaying: boolean
   currentTime: number
   duration: number
+  isLoading: boolean
+  error: string | null
 
   setTrack: (track: any) => void
   toggle: () => void
   seek: (time: number) => void
+  play: () => Promise<void>
+  pause: () => void
 }
 
 export const usePlayer = create<PlayerState>((set, get) => ({
@@ -18,58 +22,175 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   isPlaying: false,
   currentTime: 0,
   duration: 0,
+  isLoading: false,
+  error: null,
 
-  setTrack: (track) => {
+  setTrack: async (track) => {
     const currentAudio = get().audio
-
+    
+    // Clean up previous audio
     if (currentAudio) {
       currentAudio.pause()
       currentAudio.currentTime = 0
+      currentAudio.src = ''
+      currentAudio.load() // Force reload to release resources
     }
 
-    const audio = new Audio(`/api/stream/${track.id}`)
+    set({ isLoading: true, error: null, currentTime: 0, duration: 0, isPlaying: false })
 
-    audio.addEventListener('timeupdate', () => {
+    // Create new audio element with cross-origin support
+    const audio = new Audio()
+    audio.crossOrigin = 'anonymous'
+    audio.preload = 'metadata' // Mobile: only load metadata first
+    
+    // Set source after attaching event listeners
+    audio.src = `/api/stream/${track.id}`
+    audio.load() // Initiate loading
+
+    // Event listeners
+    const onTimeUpdate = () => {
       set({ currentTime: audio.currentTime })
-    })
+    }
 
-    audio.addEventListener('loadedmetadata', () => {
-      set({ duration: audio.duration })
-    })
+    const onLoadedMetadata = () => {
+      console.log('Metadata loaded:', audio.duration, audio.readyState)
+      set({ duration: audio.duration, isLoading: false })
+    }
 
-    audio.addEventListener('ended', () => {
-      set({ isPlaying: false })
-    })
+    const onCanPlay = () => {
+      console.log('Can play event fired')
+      set({ isLoading: false })
+    }
 
-    set({
-      currentTrack: track,
-      audio,
-      isPlaying: true,
+    const onEnded = () => {
+      console.log('Playback ended')
+      set({ isPlaying: false, currentTime: 0 })
+    }
+
+    const onError = (e: Event) => {
+      const error = audio.error
+      let errorMessage = 'Unknown error'
+      
+      if (error) {
+        switch (error.code) {
+          case MediaError.MEDIA_ERR_ABORTED:
+            errorMessage = 'Playback aborted'
+            break
+          case MediaError.MEDIA_ERR_NETWORK:
+            errorMessage = 'Network error - check your connection'
+            break
+          case MediaError.MEDIA_ERR_DECODE:
+            errorMessage = 'Audio format not supported'
+            break
+          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+            errorMessage = 'Audio format not supported on this device'
+            break
+        }
+      }
+      
+      console.error('Audio error:', errorMessage, error)
+      set({ error: errorMessage, isLoading: false, isPlaying: false })
+    }
+
+    const onWaiting = () => {
+      console.log('Buffering...')
+      set({ isLoading: true })
+    }
+
+    const onPlaying = () => {
+      console.log('Playing event fired')
+      set({ isLoading: false, isPlaying: true })
+    }
+
+    audio.addEventListener('timeupdate', onTimeUpdate)
+    audio.addEventListener('loadedmetadata', onLoadedMetadata)
+    audio.addEventListener('canplay', onCanPlay)
+    audio.addEventListener('ended', onEnded)
+    audio.addEventListener('error', onError)
+    audio.addEventListener('waiting', onWaiting)
+    audio.addEventListener('playing', onPlaying)
+
+    // Store cleanup function for later
+    const cleanup = () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate)
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
+      audio.removeEventListener('canplay', onCanPlay)
+      audio.removeEventListener('ended', onEnded)
+      audio.removeEventListener('error', onError)
+      audio.removeEventListener('waiting', onWaiting)
+      audio.removeEventListener('playing', onPlaying)
+    }
+
+    set({ 
+      currentTrack: track, 
+      audio, 
+      isPlaying: false,
       currentTime: 0,
       duration: 0,
+      isLoading: true,
+      error: null
     })
 
-    audio.play()
+    // Don't autoplay on mobile - let user initiate
+    // But if on desktop or user preference, attempt play
+    // Mobile browsers require user interaction first
   },
 
-  toggle: () => {
-    const { audio, isPlaying } = get()
-    if (!audio) return
+  play: async () => {
+    const { audio, currentTrack } = get()
+    if (!audio || !currentTrack) return
 
+    try {
+      set({ isLoading: true, error: null })
+      
+      // For mobile: ensure audio is unlocked
+      if (audio.paused) {
+        // Reset audio if it ended
+        if (audio.currentTime >= audio.duration) {
+          audio.currentTime = 0
+        }
+        
+        await audio.play()
+        set({ isPlaying: true, isLoading: false })
+      }
+    } catch (err) {
+      console.error('Play failed:', err)
+      // Handle mobile autoplay restrictions
+      if (err instanceof Error && err.name === 'NotAllowedError') {
+        set({ error: 'Browser requires user interaction first. Click the play button again.' })
+      } else {
+        set({ error: 'Failed to play audio. Please try again.' })
+      }
+      set({ isPlaying: false, isLoading: false })
+      throw err
+    }
+  },
+
+  pause: () => {
+    const { audio } = get()
+    if (!audio) return
+    
+    audio.pause()
+    set({ isPlaying: false })
+  },
+
+  toggle: async () => {
+    const { isPlaying, play, pause } = get()
+    
     if (isPlaying) {
-      audio.pause()
-      set({ isPlaying: false })
+      pause()
     } else {
-      audio.play()
-      set({ isPlaying: true })
+      await play()
     }
   },
 
   seek: (time) => {
     const { audio } = get()
     if (!audio) return
-
-    audio.currentTime = time
-    set({ currentTime: time })
+    
+    if (!isNaN(time) && time >= 0 && time <= audio.duration) {
+      audio.currentTime = time
+      set({ currentTime: time })
+    }
   },
 }))
