@@ -1,31 +1,20 @@
-'use client'
+"use client";
 
-import { SearchX } from 'lucide-react'
-import { useDeferredValue } from 'react'
+import { SearchX } from "lucide-react";
+import { useDeferredValue } from "react";
 
-import MixCard from '@/components/mix/mix-card'
-import { useTopBarSearch } from '@/components/navigation/top-bar-provider'
-import type { PlayerTrack } from '@/hooks/use-player'
+import MixCard from "@/components/mix/mix-card";
+import { useTopBarSearch } from "@/components/navigation/top-bar-provider";
+import { getDisplayTrackInfo } from "@/lib/mix-display";
+import type { MixRecord } from "@/types/mix";
 
-type Mix = PlayerTrack & {
-  slug: string
-  duration?: number | null
-  description?: string | null
-  album?: string | null
-}
+const collapseWhitespace = (value: string) => value.replace(/\s+/g, " ").trim();
 
-const getTrackInfo = (title: string) => {
-  const artistMatch = title.match(/^(.+?)\s+-\s+(.+)$/)
+const normalizeSearchText = (value: string) =>
+  collapseWhitespace(value).toLowerCase();
 
-  if (artistMatch) {
-    return { artist: artistMatch[1], title: artistMatch[2] }
-  }
-
-  return { artist: null, title }
-}
-
-const getSearchableText = (mix: Mix) => {
-  const trackInfo = getTrackInfo(mix.title)
+const getSearchableText = (mix: MixRecord) => {
+  const trackInfo = getDisplayTrackInfo(mix);
 
   return [
     mix.title,
@@ -33,22 +22,24 @@ const getSearchableText = (mix: Mix) => {
     mix.artist,
     trackInfo.artist,
     mix.album,
+    mix.genre?.join(" "),
     mix.description,
   ]
     .filter(Boolean)
-    .join(' ')
-    .toLowerCase()
-}
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+};
 
-export default function MixGrid({ mixes }: { mixes: Mix[] }) {
-  const { searchValue } = useTopBarSearch()
-  const deferredSearchValue = useDeferredValue(searchValue)
-  const normalizedQuery = deferredSearchValue.trim().toLowerCase()
-  const trimmedSearchValue = searchValue.trim()
+export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
+  const { searchValue } = useTopBarSearch();
+  const deferredSearchValue = useDeferredValue(searchValue);
+  const normalizedQuery = normalizeSearchText(deferredSearchValue);
+  const displayQuery = collapseWhitespace(searchValue);
 
   const filteredMixes = normalizedQuery
     ? mixes.filter((mix) => getSearchableText(mix).includes(normalizedQuery))
-    : mixes
+    : mixes;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6">
@@ -61,13 +52,6 @@ export default function MixGrid({ mixes }: { mixes: Mix[] }) {
             The Mix Crate
           </h1>
         </div>
-
-        {/* <p className="text-sm text-muted-foreground">
-          {filteredMixes.length} {filteredMixes.length === 1 ? 'mix' : 'mixes'}
-          {normalizedQuery
-            ? ` matching "${trimmedSearchValue}"`
-            : ' ready to play'}
-        </p> */}
       </div>
 
       {filteredMixes.length ? (
@@ -82,13 +66,13 @@ export default function MixGrid({ mixes }: { mixes: Mix[] }) {
             <SearchX className="size-6" />
           </div>
           <h2 className="text-lg font-semibold text-foreground">
-            No mixes matched your search
+            No matching files found
           </h2>
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Try a different title, artist, album, or keyword from the mix description.
+            Try a different title, artist, genre, or keyword from the mix description.
           </p>
         </div>
       )}
     </div>
-  )
+  );
 }

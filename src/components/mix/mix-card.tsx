@@ -1,90 +1,89 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { type PlayerTrack, usePlayer } from '@/hooks/use-player'
-import AppImage from '@/components/ui/app-image'
-import { Play, Pause, Music, Headphones, Loader2 } from 'lucide-react'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Play, Pause, Music, Headphones, Loader2 } from "lucide-react";
 
-type Mix = PlayerTrack & {
-  slug: string
-  duration?: number | null
-}
+import { usePlayer } from "@/hooks/use-player";
+import { getDisplayTrackInfo } from "@/lib/mix-display";
+import type { MixRecord } from "@/types/mix";
+import AppImage from "@/components/ui/app-image";
 
-export default function MixCard({ mix }: { mix: Mix }) {
-  const router = useRouter()
+export default function MixCard({ mix }: { mix: MixRecord }) {
+  const router = useRouter();
 
-  const {
-    currentTrack,
-    setTrack,
-    play,
-    pause,
-    isPlaying,
-    isLoading,
-  } = usePlayer()
+  const { currentTrack, setTrack, play, pause, isPlaying, isLoading } =
+    usePlayer();
 
-  const [imageError, setImageError] = useState(false)
+  const [imageError, setImageError] = useState(false);
 
-  const isCurrentTrack = currentTrack?.id === mix.id
-  const isCurrentlyPlaying = isCurrentTrack && isPlaying
-  const isCurrentlyLoading = isCurrentTrack && isLoading
+  const isCurrentTrack = currentTrack?.id === mix.id;
+  const isCurrentlyPlaying = isCurrentTrack && isPlaying;
+  const isCurrentlyLoading = isCurrentTrack && isLoading;
+  const trackInfo = getDisplayTrackInfo(mix);
 
   const getGradientStyle = (id: string) => {
-    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-    const hue1 = hash % 360
-    const hue2 = (hue1 + 40) % 360
+    const hash = id
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const hue1 = hash % 360;
+    const hue2 = (hue1 + 40) % 360;
     return {
       backgroundImage: `linear-gradient(135deg, hsl(${hue1} 70% 44%), hsl(${hue2} 72% 34%))`,
-    }
-  }
-
-  // Extract artist if format is "Artist - Title"
-  const getTrackInfo = (title: string) => {
-    const artistMatch = title.match(/^(.+?)\s+-\s+(.+)$/)
-    if (artistMatch) {
-      return { artist: artistMatch[1], title: artistMatch[2] }
-    }
-    return { artist: null, title }
-  }
-
-  const trackInfo = getTrackInfo(mix.title)
+    };
+  };
 
   const handlePlayClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation()
+    e.stopPropagation();
 
     if (isCurrentTrack && isPlaying) {
-      pause()
+      pause();
     } else if (isCurrentTrack && !isPlaying) {
-      await play()
+      await play();
     } else {
-      await setTrack({
-        id: mix.id,
-        title: mix.title,
-        drive_file_id: mix.drive_file_id,
-        cover_image_url: mix.cover_image_url,
-        artist: trackInfo.artist,
-      }, { autoplay: true })
+      await setTrack(
+        {
+          id: mix.id,
+          title: trackInfo.title,
+          drive_file_id: mix.drive_file_id,
+          cover_image_url: mix.cover_image_url ?? undefined,
+          artist: trackInfo.artist,
+          album: mix.album ?? null,
+          genre: mix.genre ?? null,
+          year: mix.year ?? null,
+        },
+        { autoplay: true },
+      );
     }
-  }
+  };
 
   const handleCardClick = () => {
-    router.push(`/mix/${mix.slug}`)
-  }
+    if (!mix.slug) {
+      return;
+    }
 
-  const formatDuration = (seconds?: number) => {
-    if (!seconds) return null
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
+    router.push(`/mix/${mix.slug}`);
+  };
 
-  const duration = formatDuration(mix.duration)
+  const formatDuration = (seconds?: number | null) => {
+    if (!seconds) return null;
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours >= 1) {
+      return `${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const duration = formatDuration(mix.duration);
 
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative cursor-pointer overflow-hidden rounded-sm border border-border bg-card text-card-foreground shadow-[0_18px_40px_rgba(0,0,0,0.24)] transition-all duration-300 hover:border-foreground/15 hover:shadow-[0_24px_48px_rgba(0,0,0,0.32)] ${
-        isCurrentTrack ? 'border-primary/30 ring-1 ring-primary/30' : ''
+      className={`group relative cursor-pointer overflow-hidden rounded-sm bg-card text-card-foreground shadow-[0_18px_40px_rgba(0,0,0,0.24)] transition-all duration-300 hover:border-foreground/15 hover:shadow-[0_24px_48px_rgba(0,0,0,0.32)] ${
+        isCurrentTrack ? "border-primary/30 ring-2 ring-primary/30" : ""
       }`}
     >
       {/* Album Art */}
@@ -156,7 +155,9 @@ export default function MixCard({ mix }: { mix: Mix }) {
         </h3>
 
         {trackInfo.artist && (
-          <p className="truncate text-sm text-muted-foreground">{trackInfo.artist}</p>
+          <p className="truncate text-sm text-muted-foreground">
+            {trackInfo.artist}
+          </p>
         )}
 
         {/* Progress bar */}
@@ -178,5 +179,5 @@ export default function MixCard({ mix }: { mix: Mix }) {
         )}
       </div>
     </div>
-  )
+  );
 }

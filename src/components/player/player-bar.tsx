@@ -5,6 +5,22 @@ import AppImage from "@/components/ui/app-image";
 import { usePlayer } from "@/hooks/use-player";
 import { Play, Pause, Loader2, Volume2, VolumeX, X } from "lucide-react";
 
+const shouldIgnorePlayerShortcut = (target: EventTarget | null) => {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target.closest("input, textarea, select, button, a, summary")) {
+    return true;
+  }
+
+  const contentEditableAncestor = target.closest("[contenteditable]");
+  return (
+    contentEditableAncestor instanceof HTMLElement &&
+    contentEditableAncestor.isContentEditable
+  );
+};
+
 export default function PlayerBar() {
   const {
     currentTrack,
@@ -89,26 +105,41 @@ export default function PlayerBar() {
 
   // Handle keyboard controls
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (!currentTrack) return;
 
-      switch (e.code) {
+      if (
+        event.defaultPrevented ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        shouldIgnorePlayerShortcut(event.target)
+      ) {
+        return;
+      }
+
+      switch (event.code) {
         case "Space":
-          e.preventDefault();
+          if (event.repeat) {
+            return;
+          }
+          event.preventDefault();
           void toggle();
           break;
         case "ArrowLeft":
+          event.preventDefault();
           seek(Math.max(0, currentTime - 5));
           break;
         case "ArrowRight":
+          event.preventDefault();
           seek(Math.min(duration, currentTime + 5));
           break;
       }
     };
 
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [currentTrack, currentTime, duration, seek, toggle]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentTime, currentTrack, duration, seek, toggle]);
 
   // If no track is playing, don't render the player bar
   if (!currentTrack) {

@@ -1,16 +1,18 @@
-import { supabase } from "./supabase";
+import type { MixRecord } from '@/types/mix'
 
-export async function getMixes() {
+import { supabase } from './supabase'
+
+export async function getMixes(): Promise<MixRecord[]> {
   const { data, error } = await supabase
-    .from("mixes")
-    .select("*")
-    .eq("published", true)
-    .order("created_at", { ascending: false });
+    .from('mixes')
+    .select('*')
+    .eq('published', true)
+    .order('created_at', { ascending: false })
 
   if (error) {
-    console.error("Error fetching mixes:", error);
-    return [];
+    console.error('Error fetching mixes:', error)
+    return []
   }
 
-  return data;
+  return (data ?? []) as MixRecord[]
 }

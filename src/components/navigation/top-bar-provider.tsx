@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState } from 'react'
+import { usePathname } from 'next/navigation'
 
 import TopBar from '@/components/navigation/top-bar'
 
@@ -26,11 +27,13 @@ export default function TopBarProvider({
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
   const [searchValue, setSearchValue] = useState('')
 
   return (
     <TopBarSearchContext.Provider value={{ searchValue, setSearchValue }}>
       <TopBar
+        key={pathname}
         searchValue={searchValue}
         onSearchValueChange={setSearchValue}
       />
