@@ -10,6 +10,19 @@ type AudioFileDetails = {
   contentType: string
 }
 
+type DriveFileLookupResult = {
+  data: { drive_file_id: string } | null
+  error: { message: string } | null
+}
+
+type MixDriveLookupTable = {
+  select: (columns: 'drive_file_id') => {
+    eq: (column: 'id', value: string) => {
+      single: () => PromiseLike<DriveFileLookupResult>
+    }
+  }
+}
+
 const getContentType = (fileName: string, mimeType: string) => {
   const normalizedName = fileName.toLowerCase()
   const normalizedMimeType = mimeType.toLowerCase()
@@ -46,8 +59,8 @@ const getContentType = (fileName: string, mimeType: string) => {
 }
 
 const getAudioFileDetails = async (mixId: string): Promise<AudioFileDetails | null> => {
-  const { data: mix, error } = await supabase
-    .from('mixes')
+  const mixesTable = supabase.from('mixes') as unknown as MixDriveLookupTable
+  const { data: mix, error } = await mixesTable
     .select('drive_file_id')
     .eq('id', mixId)
     .single()

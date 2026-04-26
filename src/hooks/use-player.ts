@@ -1,11 +1,16 @@
 import { create } from 'zustand'
 
+import type { MixGenre } from '@/types/mix'
+
 export interface PlayerTrack {
   id: string
   title: string
   drive_file_id: string
   cover_image_url?: string
   artist?: string | null
+  album?: string | null
+  genre?: MixGenre | null
+  year?: number | null
 }
 
 interface SetTrackOptions {

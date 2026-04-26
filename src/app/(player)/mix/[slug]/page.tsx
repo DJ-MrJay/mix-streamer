@@ -1,6 +1,8 @@
 // src/app/(player)/mix/[slug]/page.tsx
 
 import { supabase } from '@/lib/supabase'
+import { getDisplayTrackInfo } from '@/lib/mix-display'
+import type { MixRecord } from '@/types/mix'
 import PlayButton from '@/components/mix/play-button'
 import AppImage from '@/components/ui/app-image'
 
@@ -11,24 +13,18 @@ export default async function MixPage({
 }) {
   const { slug } = await params
 
-  const { data: mix } = await supabase
+  const { data } = await supabase
     .from('mixes')
     .select('*')
     .eq('slug', slug)
     .single()
+  const mix = data as MixRecord | null
 
   if (!mix) {
     return <div className="p-6 text-foreground">Mix not found</div>
   }
 
-  // Optional: extract artist if format is "Artist - Title"
-  const getTrackInfo = (title: string) => {
-    const match = title.match(/^(.+?)\s+-\s+(.+)$/)
-    if (match) return { artist: match[1], title: match[2] }
-    return { artist: null, title }
-  }
-
-  const trackInfo = getTrackInfo(mix.title)
+  const trackInfo = getDisplayTrackInfo(mix)
 
   const formatDuration = (seconds?: number) => {
     if (!seconds) return null
@@ -43,6 +39,13 @@ export default async function MixPage({
     }
     return `${m}:${s.toString().padStart(2, '0')}`
   }
+
+  const metadataPills = [
+    // mix.album ? `Album: ${mix.album}` : null,
+    mix.year ? `Year: ${mix.year}` : null,
+    mix.genre?.length ? `Genre: ${mix.genre.join(', ')}` : null,
+    mix.duration ? `Length: ${formatDuration(mix.duration)}` : null,
+  ].filter(Boolean) as string[]
 
   return (
     <div className="min-h-screen bg-background pb-28 text-foreground">
@@ -96,12 +99,32 @@ export default async function MixPage({
                 <p className="mb-2 text-base text-muted-foreground md:text-lg">{trackInfo.artist}</p>
               )}
 
-              {mix.duration && (
-                <div className="mb-4 text-sm text-muted-foreground">{formatDuration(mix.duration)}</div>
-              )}
+              {metadataPills.length ? (
+                <div className="mb-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
+                  {metadataPills.map((pill) => (
+                    <span
+                      key={pill}
+                      className="rounded-full border border-border bg-card/80 px-3 py-1 backdrop-blur-sm"
+                    >
+                      {pill}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
 
               {/* PLAY BUTTON */}
-              <PlayButton mix={{ ...mix, artist: trackInfo.artist }} />
+              <PlayButton
+                mix={{
+                  id: mix.id,
+                  title: trackInfo.title,
+                  drive_file_id: mix.drive_file_id,
+                  cover_image_url: mix.cover_image_url ?? undefined,
+                  artist: trackInfo.artist,
+                  album: mix.album ?? null,
+                  genre: mix.genre ?? null,
+                  year: mix.year ?? null,
+                }}
+              />
             </div>
           </div>
         </div>

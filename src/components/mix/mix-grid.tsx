@@ -5,27 +5,11 @@ import { useDeferredValue } from 'react'
 
 import MixCard from '@/components/mix/mix-card'
 import { useTopBarSearch } from '@/components/navigation/top-bar-provider'
-import type { PlayerTrack } from '@/hooks/use-player'
+import { getDisplayTrackInfo } from '@/lib/mix-display'
+import type { MixRecord } from '@/types/mix'
 
-type Mix = PlayerTrack & {
-  slug: string
-  duration?: number | null
-  description?: string | null
-  album?: string | null
-}
-
-const getTrackInfo = (title: string) => {
-  const artistMatch = title.match(/^(.+?)\s+-\s+(.+)$/)
-
-  if (artistMatch) {
-    return { artist: artistMatch[1], title: artistMatch[2] }
-  }
-
-  return { artist: null, title }
-}
-
-const getSearchableText = (mix: Mix) => {
-  const trackInfo = getTrackInfo(mix.title)
+const getSearchableText = (mix: MixRecord) => {
+  const trackInfo = getDisplayTrackInfo(mix)
 
   return [
     mix.title,
@@ -33,6 +17,8 @@ const getSearchableText = (mix: Mix) => {
     mix.artist,
     trackInfo.artist,
     mix.album,
+    mix.genre?.join(' '),
+    mix.year ? String(mix.year) : null,
     mix.description,
   ]
     .filter(Boolean)
@@ -40,11 +26,10 @@ const getSearchableText = (mix: Mix) => {
     .toLowerCase()
 }
 
-export default function MixGrid({ mixes }: { mixes: Mix[] }) {
+export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
   const { searchValue } = useTopBarSearch()
   const deferredSearchValue = useDeferredValue(searchValue)
   const normalizedQuery = deferredSearchValue.trim().toLowerCase()
-  const trimmedSearchValue = searchValue.trim()
 
   const filteredMixes = normalizedQuery
     ? mixes.filter((mix) => getSearchableText(mix).includes(normalizedQuery))

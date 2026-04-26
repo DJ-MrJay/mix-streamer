@@ -99,14 +99,14 @@ export default function TopBar({
             className="flex min-w-0 items-center gap-3"
             aria-label="Go to home"
           >
-            <div className="relative flex size-11 items-center justify-center overflow-hidden bg-card/80 shadow-[0_10px_25px_rgba(0,0,0,0.18)]">
+            <div className="relative flex size-11 items-center justify-center overflow-hidden bg-card/80 shadow-[0_10px_25px_rgba(0,0,0,0.18)] sm:size-14">
               <AppImage
                 src="/djmrjay-logo-light.svg"
                 alt=""
                 width={44}
                 height={44}
                 unoptimized
-                className="hidden dark:block"
+                className="hidden dark:block sm:w-14 sm:h-14"
               />
               <AppImage
                 src="/djmrjay-logo-dark.svg"
@@ -114,7 +114,7 @@ export default function TopBar({
                 width={44}
                 height={44}
                 unoptimized
-                className="block dark:hidden"
+                className="block dark:hidden sm:w-14 sm:h-14"
               />
             </div>
           </Link>
@@ -126,7 +126,7 @@ export default function TopBar({
                 ref={desktopSearchRef}
                 value={searchValue}
                 onChange={(event) => onSearchValueChange?.(event.target.value)}
-                placeholder="Search title, artist, or description"
+                placeholder="Search title, artist, genre, or description"
                 className={searchInputClassName}
                 aria-label="Search mixes"
               />
@@ -146,7 +146,7 @@ export default function TopBar({
           <div className="ml-auto flex items-center gap-2 sm:ml-0">
             <div
               onClick={handleThemeToggle}
-              className="cursor-pointer"
+              className="cursor-pointer rounded-full p-2 transition-colors hover:bg-muted"
               aria-label={isMounted ? themeToggleLabel : "Toggle theme"}
             >
               <SunMedium className="hidden size-6 dark:block text-foreground" />
@@ -154,13 +154,15 @@ export default function TopBar({
             </div>
 
             {searchEnabled ? (
-              <Search
-                className="text-foreground cursor-pointer"
+              <div
+                className="cursor-pointer rounded-full p-2 transition-colors hover:bg-muted"
                 onClick={handleSearchButtonClick}
                 aria-label="Search mixes"
                 aria-controls={mobileSearchId}
                 aria-expanded={isMobileSearchOpen}
-              />
+              >
+                <Search className="text-foreground size-6" />
+              </div>
             ) : null}
           </div>
         </div>
@@ -172,7 +174,7 @@ export default function TopBar({
               ref={mobileSearchRef}
               value={searchValue}
               onChange={(event) => onSearchValueChange?.(event.target.value)}
-              placeholder="Search title, artist, or description"
+              placeholder="Search title, artist, genre, or description"
               className={searchInputClassName}
               aria-label="Search mixes"
             />
