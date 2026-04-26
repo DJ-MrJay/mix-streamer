@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase'
 import PlayButton from '@/components/mix/play-button'
+import AppImage from '@/components/ui/app-image'
 
 export default async function MixPage({
   params,
@@ -49,10 +50,15 @@ export default async function MixPage({
       <div className="relative overflow-hidden border-b border-border">
         {/* Background blur */}
         {mix.cover_image_url && (
-          <div
-            className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110"
-            style={{ backgroundImage: `url(${mix.cover_image_url})` }}
-          />
+          <div className="absolute inset-0">
+            <AppImage
+              src={mix.cover_image_url}
+              alt=""
+              fill
+              sizes="100vw"
+              className="scale-110 object-cover opacity-30 blur-3xl"
+            />
+          </div>
         )}
 
         <div className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/75 to-background" />
@@ -61,21 +67,25 @@ export default async function MixPage({
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-end">
             {/* Cover */}
             {mix.cover_image_url ? (
-              <img
+              <AppImage
                 src={mix.cover_image_url}
                 alt={mix.title}
-                className="aspect-square w-full max-w-xs rounded-2xl border border-border object-cover shadow-2xl md:w-64"
+                width={640}
+                height={640}
+                preload
+                sizes="(max-width: 768px) 100vw, 256px"
+                className="aspect-square w-full  rounded-lg border border-border object-cover shadow-2xl md:w-64"
               />
             ) : (
-              <div className="flex aspect-square w-full max-w-xs items-center justify-center rounded-2xl border border-border bg-card text-muted-foreground shadow-2xl md:w-64">
-                DJ Mix
+              <div className="flex aspect-square w-full  items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-2xl md:w-64">
+                DJ Mr Jay Mix
               </div>
             )}
 
             {/* Info */}
             <div className="flex-1">
               <p className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
-                DJ Mix
+                DJ Mr Jay Mix
               </p>
 
               <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground md:text-5xl">
@@ -91,7 +101,7 @@ export default async function MixPage({
               )}
 
               {/* PLAY BUTTON */}
-              <PlayButton mix={mix} />
+              <PlayButton mix={{ ...mix, artist: trackInfo.artist }} />
             </div>
           </div>
         </div>
@@ -101,7 +111,7 @@ export default async function MixPage({
       <div className="mx-auto mt-6 flex max-w-6xl flex-col gap-6 px-4">
         {/* Description */}
         {mix.description && (
-          <section className="rounded-3xl border border-border bg-card/80 p-5 shadow-lg backdrop-blur-sm">
+          <section className="rounded-lg border border-border bg-card/80 p-5 shadow-lg backdrop-blur-sm">
             <h2 className="mb-2 text-lg font-semibold text-foreground">
               About this mix
             </h2>
@@ -110,7 +120,7 @@ export default async function MixPage({
         )}
 
         {/* Placeholder tracklist */}
-        <section className="rounded-3xl border border-border bg-card/80 p-5 shadow-lg backdrop-blur-sm">
+        <section className="rounded-lg border border-border bg-card/80 p-5 shadow-lg backdrop-blur-sm">
           <h2 className="mb-4 text-lg font-semibold text-foreground">
             Tracklist
           </h2>

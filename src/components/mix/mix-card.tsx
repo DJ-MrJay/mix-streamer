@@ -2,16 +2,13 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { usePlayer } from '@/hooks/use-player'
+import { type PlayerTrack, usePlayer } from '@/hooks/use-player'
+import AppImage from '@/components/ui/app-image'
 import { Play, Pause, Music, Headphones, Loader2 } from 'lucide-react'
 
-type Mix = {
-  id: string
-  title: string
+type Mix = PlayerTrack & {
   slug: string
-  drive_file_id: string
-  cover_image_url?: string
-  duration?: number
+  duration?: number | null
 }
 
 export default function MixCard({ mix }: { mix: Mix }) {
@@ -52,8 +49,8 @@ export default function MixCard({ mix }: { mix: Mix }) {
 
   const trackInfo = getTrackInfo(mix.title)
 
-  const handlePlayClick = async (e: React.MouseEvent) => {
-    e.stopPropagation() // 🔥 prevents navigation
+  const handlePlayClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
 
     if (isCurrentTrack && isPlaying) {
       pause()
@@ -65,8 +62,8 @@ export default function MixCard({ mix }: { mix: Mix }) {
         title: mix.title,
         drive_file_id: mix.drive_file_id,
         cover_image_url: mix.cover_image_url,
-      })
-      await play()
+        artist: trackInfo.artist,
+      }, { autoplay: true })
     }
   }
 
@@ -86,19 +83,20 @@ export default function MixCard({ mix }: { mix: Mix }) {
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-[0_18px_40px_rgba(0,0,0,0.24)] transition-all duration-300 hover:-translate-y-1 hover:border-foreground/15 hover:shadow-[0_24px_48px_rgba(0,0,0,0.32)] ${
+      className={`group relative cursor-pointer overflow-hidden rounded-sm border border-border bg-card text-card-foreground shadow-[0_18px_40px_rgba(0,0,0,0.24)] transition-all duration-300 hover:border-foreground/15 hover:shadow-[0_24px_48px_rgba(0,0,0,0.32)] ${
         isCurrentTrack ? 'border-primary/30 ring-1 ring-primary/30' : ''
       }`}
     >
       {/* Album Art */}
       <div className="relative aspect-square overflow-hidden bg-muted">
         {mix.cover_image_url && !imageError ? (
-          <img
+          <AppImage
             src={mix.cover_image_url}
             alt={mix.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
             onError={() => setImageError(true)}
-            loading="lazy"
           />
         ) : (
           <div

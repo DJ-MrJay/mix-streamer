@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getThemeScript } from "@/lib/theme";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,8 +13,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
+        <script dangerouslySetInnerHTML={{ __html: getThemeScript() }} />
         {children}
       </body>
     </html>

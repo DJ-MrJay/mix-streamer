@@ -14,6 +14,7 @@ export default function PlayButton({ mix }: { mix: PlayerTrack }) {
   } = usePlayer()
 
   const isCurrent = currentTrack?.id === mix.id
+  const isCurrentLoading = isCurrent && isLoading
 
   const handleClick = async () => {
     if (isCurrent && isPlaying) {
@@ -21,8 +22,7 @@ export default function PlayButton({ mix }: { mix: PlayerTrack }) {
     } else if (isCurrent && !isPlaying) {
       await play()
     } else {
-      await setTrack(mix)
-      await play()
+      await setTrack(mix, { autoplay: true })
     }
   }
 
@@ -32,7 +32,7 @@ export default function PlayButton({ mix }: { mix: PlayerTrack }) {
       type="button"
       className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
     >
-      {isLoading ? (
+      {isCurrentLoading ? (
         <Loader2 className="animate-spin" />
       ) : isCurrent && isPlaying ? (
         <Pause />

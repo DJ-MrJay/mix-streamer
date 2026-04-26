@@ -8,6 +8,10 @@ export interface PlayerTrack {
   artist?: string | null
 }
 
+interface SetTrackOptions {
+  autoplay?: boolean
+}
+
 interface PlayerState {
   currentTrack: PlayerTrack | null
   audio: HTMLAudioElement | null
@@ -17,177 +21,272 @@ interface PlayerState {
   isLoading: boolean
   error: string | null
 
-  setTrack: (track: PlayerTrack) => Promise<void>
-  toggle: () => void
+  setTrack: (track: PlayerTrack, options?: SetTrackOptions) => Promise<void>
+  toggle: () => Promise<void>
   seek: (time: number) => void
   play: () => Promise<void>
   pause: () => void
 }
 
-export const usePlayer = create<PlayerState>((set, get) => ({
-  currentTrack: null,
-  audio: null,
-  isPlaying: false,
-  currentTime: 0,
-  duration: 0,
-  isLoading: false,
-  error: null,
+export const usePlayer = create<PlayerState>((set, get) => {
+  let audioCleanup: (() => void) | null = null
 
-  setTrack: async (track) => {
-    const currentAudio = get().audio
-    
-    // Clean up previous audio
-    if (currentAudio) {
-      currentAudio.pause()
-      currentAudio.currentTime = 0
-      currentAudio.src = ''
-      currentAudio.load() // Force reload to release resources
+  const isActiveAudio = (audio: HTMLAudioElement) => get().audio === audio
+
+  const getMediaErrorMessage = (audio: HTMLAudioElement) => {
+    const mediaError = audio.error
+
+    if (!mediaError) {
+      return 'Unable to load this mix.'
     }
 
-    set({ isLoading: true, error: null, currentTime: 0, duration: 0, isPlaying: false })
+    switch (mediaError.code) {
+      case MediaError.MEDIA_ERR_ABORTED:
+        return 'Playback was interrupted.'
+      case MediaError.MEDIA_ERR_NETWORK:
+        return 'Network error while loading audio.'
+      case MediaError.MEDIA_ERR_DECODE:
+        return 'This audio file could not be decoded.'
+      case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+        return 'This audio format is not supported on this device.'
+      default:
+        return 'Unable to play this mix.'
+    }
+  }
 
-    // Create new audio element with cross-origin support
-    const audio = new Audio()
-    audio.crossOrigin = 'anonymous'
-    audio.preload = 'metadata' // Mobile: only load metadata first
-    
-    // Set source after attaching event listeners
-    audio.src = `/api/stream/${track.id}`
-    audio.load() // Initiate loading
+  const getPlayErrorMessage = (error: unknown) => {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return null
+    }
 
-    // Event listeners
-    const onTimeUpdate = () => {
-      set({ currentTime: audio.currentTime })
+    if (error instanceof DOMException && error.name === 'NotAllowedError') {
+      return 'Playback was blocked by the browser. Try using the play button again.'
+    }
+
+    if (error instanceof DOMException && error.name === 'NotSupportedError') {
+      return 'This audio format is not supported on this device.'
+    }
+
+    return 'Failed to start playback. Please try again.'
+  }
+
+  const releaseAudio = (audio: HTMLAudioElement | null) => {
+    if (audioCleanup) {
+      audioCleanup()
+      audioCleanup = null
+    }
+
+    if (!audio) {
+      return
+    }
+
+    audio.pause()
+    audio.removeAttribute('src')
+    audio.load()
+  }
+
+  const attachAudioListeners = (audio: HTMLAudioElement) => {
+    const syncState = (state: Partial<PlayerState>) => {
+      if (!isActiveAudio(audio)) {
+        return
+      }
+
+      set(state)
+    }
+
+    const onLoadStart = () => {
+      syncState({ isLoading: true, error: null })
     }
 
     const onLoadedMetadata = () => {
-      console.log('Metadata loaded:', audio.duration, audio.readyState)
-      set({ duration: audio.duration, isLoading: false })
+      syncState({
+        duration: Number.isFinite(audio.duration) ? audio.duration : 0,
+      })
     }
 
     const onCanPlay = () => {
-      console.log('Can play event fired')
-      set({ isLoading: false })
+      syncState({ isLoading: false })
     }
 
-    const onEnded = () => {
-      console.log('Playback ended')
-      set({ isPlaying: false, currentTime: 0 })
-    }
-
-    const onError = () => {
-      const error = audio.error
-      let errorMessage = 'Unknown error'
-      
-      if (error) {
-        switch (error.code) {
-          case MediaError.MEDIA_ERR_ABORTED:
-            errorMessage = 'Playback aborted'
-            break
-          case MediaError.MEDIA_ERR_NETWORK:
-            errorMessage = 'Network error - check your connection'
-            break
-          case MediaError.MEDIA_ERR_DECODE:
-            errorMessage = 'Audio format not supported'
-            break
-          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-            errorMessage = 'Audio format not supported on this device'
-            break
-        }
-      }
-      
-      console.error('Audio error:', errorMessage, error)
-      set({ error: errorMessage, isLoading: false, isPlaying: false })
+    const onTimeUpdate = () => {
+      syncState({ currentTime: audio.currentTime })
     }
 
     const onWaiting = () => {
-      console.log('Buffering...')
-      set({ isLoading: true })
+      syncState({ isLoading: true })
     }
 
     const onPlaying = () => {
-      console.log('Playing event fired')
-      set({ isLoading: false, isPlaying: true })
+      syncState({ isLoading: false, isPlaying: true, error: null })
     }
 
-    audio.addEventListener('timeupdate', onTimeUpdate)
+    const onPause = () => {
+      syncState({ isLoading: false, isPlaying: false })
+    }
+
+    const onEnded = () => {
+      syncState({ currentTime: 0, isLoading: false, isPlaying: false })
+    }
+
+    const onError = () => {
+      syncState({
+        error: getMediaErrorMessage(audio),
+        isLoading: false,
+        isPlaying: false,
+      })
+    }
+
+    audio.addEventListener('loadstart', onLoadStart)
     audio.addEventListener('loadedmetadata', onLoadedMetadata)
     audio.addEventListener('canplay', onCanPlay)
-    audio.addEventListener('ended', onEnded)
-    audio.addEventListener('error', onError)
+    audio.addEventListener('timeupdate', onTimeUpdate)
     audio.addEventListener('waiting', onWaiting)
     audio.addEventListener('playing', onPlaying)
+    audio.addEventListener('pause', onPause)
+    audio.addEventListener('ended', onEnded)
+    audio.addEventListener('error', onError)
 
-    set({ 
-      currentTrack: track, 
-      audio, 
-      isPlaying: false,
-      currentTime: 0,
-      duration: 0,
-      isLoading: true,
-      error: null
-    })
+    return () => {
+      audio.removeEventListener('loadstart', onLoadStart)
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
+      audio.removeEventListener('canplay', onCanPlay)
+      audio.removeEventListener('timeupdate', onTimeUpdate)
+      audio.removeEventListener('waiting', onWaiting)
+      audio.removeEventListener('playing', onPlaying)
+      audio.removeEventListener('pause', onPause)
+      audio.removeEventListener('ended', onEnded)
+      audio.removeEventListener('error', onError)
+    }
+  }
 
-    // Don't autoplay on mobile - let user initiate
-    // But if on desktop or user preference, attempt play
-    // Mobile browsers require user interaction first
-  },
+  const playAudio = async (audio: HTMLAudioElement) => {
+    if (!isActiveAudio(audio)) {
+      return
+    }
 
-  play: async () => {
-    const { audio, currentTrack } = get()
-    if (!audio || !currentTrack) return
+    if (!audio.paused) {
+      set({ error: null, isLoading: false, isPlaying: true })
+      return
+    }
+
+    if (Number.isFinite(audio.duration) && audio.currentTime >= audio.duration) {
+      audio.currentTime = 0
+    }
+
+    set({ error: null, isLoading: true })
 
     try {
-      set({ isLoading: true, error: null })
-      
-      // For mobile: ensure audio is unlocked
-      if (audio.paused) {
-        // Reset audio if it ended
-        if (audio.currentTime >= audio.duration) {
-          audio.currentTime = 0
+      await audio.play()
+
+      if (isActiveAudio(audio)) {
+        set({ error: null, isLoading: false, isPlaying: true })
+      }
+    } catch (error) {
+      if (!isActiveAudio(audio)) {
+        return
+      }
+
+      const errorMessage = getPlayErrorMessage(error)
+
+      set({
+        error: errorMessage,
+        isLoading: false,
+        isPlaying: false,
+      })
+    }
+  }
+
+  return {
+    currentTrack: null,
+    audio: null,
+    isPlaying: false,
+    currentTime: 0,
+    duration: 0,
+    isLoading: false,
+    error: null,
+
+    setTrack: async (track, options) => {
+      const autoplay = options?.autoplay ?? false
+      const { audio: currentAudio, currentTrack } = get()
+
+      if (currentAudio && currentTrack?.id === track.id) {
+        set({ currentTrack: track, error: null })
+
+        if (autoplay) {
+          await playAudio(currentAudio)
         }
-        
-        await audio.play()
-        set({ isPlaying: true, isLoading: false })
-      }
-    } catch (err) {
-      console.error('Play failed:', err)
-      // Handle mobile autoplay restrictions
-      if (err instanceof Error && err.name === 'NotAllowedError') {
-        set({ error: 'Browser requires user interaction first. Click the play button again.' })
-      } else {
-        set({ error: 'Failed to play audio. Please try again.' })
-      }
-      set({ isPlaying: false, isLoading: false })
-      throw err
-    }
-  },
 
-  pause: () => {
-    const { audio } = get()
-    if (!audio) return
-    
-    audio.pause()
-    set({ isPlaying: false })
-  },
+        return
+      }
 
-  toggle: async () => {
-    const { isPlaying, play, pause } = get()
-    
-    if (isPlaying) {
-      pause()
-    } else {
+      releaseAudio(currentAudio)
+
+      const audio = new Audio(`/api/stream/${track.id}`)
+      audio.preload = autoplay ? 'auto' : 'metadata'
+      audioCleanup = attachAudioListeners(audio)
+
+      set({
+        currentTrack: track,
+        audio,
+        currentTime: 0,
+        duration: 0,
+        isLoading: true,
+        isPlaying: false,
+        error: null,
+      })
+
+      if (autoplay) {
+        await playAudio(audio)
+        return
+      }
+
+      audio.load()
+    },
+
+    play: async () => {
+      const { audio, currentTrack } = get()
+
+      if (!audio || !currentTrack) {
+        return
+      }
+
+      await playAudio(audio)
+    },
+
+    pause: () => {
+      const { audio } = get()
+
+      if (!audio) {
+        return
+      }
+
+      audio.pause()
+      set({ isLoading: false, isPlaying: false })
+    },
+
+    toggle: async () => {
+      const { isPlaying, pause, play } = get()
+
+      if (isPlaying) {
+        pause()
+        return
+      }
+
       await play()
-    }
-  },
+    },
 
-  seek: (time) => {
-    const { audio } = get()
-    if (!audio) return
-    
-    if (!isNaN(time) && time >= 0 && time <= audio.duration) {
-      audio.currentTime = time
-      set({ currentTime: time })
-    }
-  },
-}))
+    seek: (time) => {
+      const { audio } = get()
+
+      if (!audio || Number.isNaN(time) || time < 0) {
+        return
+      }
+
+      const maxTime = Number.isFinite(audio.duration) ? audio.duration : time
+      const nextTime = Math.min(time, maxTime)
+
+      audio.currentTime = nextTime
+      set({ currentTime: nextTime })
+    },
+  }
+})

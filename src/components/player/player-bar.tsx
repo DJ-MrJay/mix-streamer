@@ -1,19 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import AppImage from "@/components/ui/app-image";
 import { usePlayer } from "@/hooks/use-player";
-import {
-  Play,
-  Pause,
-  Loader2,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  VolumeX,
-  X,
-} from "lucide-react";
-
-type AudioContextConstructor = typeof AudioContext;
+import { Play, Pause, Loader2, Volume2, VolumeX, X } from "lucide-react";
 
 export default function PlayerBar() {
   const {
@@ -27,62 +17,31 @@ export default function PlayerBar() {
     error,
   } = usePlayer();
 
-  const [userInteracted, setUserInteracted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
-  const [showMobileProgress, setShowMobileProgress] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
-
-  // Handle mobile audio unlock
-  useEffect(() => {
-    const unlockAudio = async () => {
-      // Create a silent audio context to unlock audio on mobile
-      const audioContextConstructor =
-        window.AudioContext ||
-        (window as Window & {
-          webkitAudioContext?: AudioContextConstructor;
-        }).webkitAudioContext;
-
-      if (audioContextConstructor) {
-        const context = new audioContextConstructor();
-        if (context.state === "suspended") {
-          await context.resume();
-        }
-      }
-    };
-
-    // Unlock on any user interaction
-    const handleUserInteraction = () => {
-      if (!userInteracted) {
-        setUserInteracted(true);
-        unlockAudio();
-      }
-    };
-
-    window.addEventListener("click", handleUserInteraction);
-    window.addEventListener("touchstart", handleUserInteraction);
-    window.addEventListener("touchend", handleUserInteraction);
-
-    return () => {
-      window.removeEventListener("click", handleUserInteraction);
-      window.removeEventListener("touchstart", handleUserInteraction);
-      window.removeEventListener("touchend", handleUserInteraction);
-    };
-  }, [userInteracted]);
 
   // Update volume when changed
   useEffect(() => {
-    const { audio } = usePlayer.getState();
-    if (audio) {
-      audio.volume = isMuted ? 0 : volume;
-    }
-  }, [volume, isMuted]);
+    const currentAudio = usePlayer.getState().audio;
 
-  // Format time (seconds to MM:SS)
+    if (currentAudio) {
+      currentAudio.volume = isMuted ? 0 : volume;
+    }
+  }, [currentTrack?.id, volume, isMuted]);
+
+  // Format time (seconds to HH:MM:SS or MM:SS)
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";
-    const minutes = Math.floor(time / 60);
+
+    const hours = Math.floor(time / 3600);
+    const minutes = Math.floor((time % 3600) / 60);
     const seconds = Math.floor(time % 60);
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    }
+
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
@@ -136,7 +95,7 @@ export default function PlayerBar() {
       switch (e.code) {
         case "Space":
           e.preventDefault();
-          toggle();
+          void toggle();
           break;
         case "ArrowLeft":
           seek(Math.max(0, currentTime - 5));
@@ -156,222 +115,102 @@ export default function PlayerBar() {
     return null;
   }
 
-  // Check if mobile device
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
   return (
     <>
-      {/* Mobile full-screen progress modal */}
-      {isMobile && showMobileProgress && (
-        <div
-          className="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center"
-          onClick={() => setShowMobileProgress(false)}
-        >
-          <button
-            className="absolute top-4 right-4 text-white p-2"
-            onClick={() => setShowMobileProgress(false)}
-          >
-            <X size={24} />
-          </button>
-
-          <div className="w-full max-w-md px-6">
-            <div className="text-center mb-8">
-              <h3 className="text-white text-xl font-semibold mb-2">
-                {currentTrack.title}
-              </h3>
-              {currentTrack.artist && (
-                <p className="text-gray-400">{currentTrack.artist}</p>
-              )}
-            </div>
-
-            <div className="mb-8">
-              <div className="text-white text-center mb-2">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </div>
-              <input
-                type="range"
-                min="0"
-                max={duration || 100}
-                value={currentTime}
-                onChange={(e) => seek(parseFloat(e.target.value))}
-                className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                style={{
-                  background: `linear-gradient(to right, white 0%, white ${progressPercentage}%, #4a5568 ${progressPercentage}%, #4a5568 100%)`,
-                }}
-              />
-            </div>
-
-            <div className="flex items-center justify-center gap-8">
-              <button
-                onClick={() => seek(Math.max(0, currentTime - 10))}
-                className="text-white p-3 hover:bg-white/10 rounded-full transition"
-              >
-                <SkipBack size={24} />
-              </button>
-
-              <button
-                onClick={toggle}
-                disabled={isLoading}
-                className="bg-white text-black p-5 rounded-full hover:scale-105 transition disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <Loader2 size={32} className="animate-spin" />
-                ) : isPlaying ? (
-                  <Pause size={32} fill="black" />
-                ) : (
-                  <Play size={32} fill="black" className="ml-1" />
-                )}
-              </button>
-
-              <button
-                onClick={() => seek(Math.min(duration, currentTime + 10))}
-                className="text-white p-3 hover:bg-white/10 rounded-full transition"
-              >
-                <SkipForward size={24} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main player bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-gray-900 to-gray-800 border-t border-gray-700 shadow-lg z-40">
-        <div className="max-w-7xl mx-auto px-4 py-3">
+      <div className="fixed right-0 bottom-0 left-0 z-40 bg-gradient-to-r from-gray-900 to-gray-800 shadow-lg">
+        <div className="relative mx-auto max-w-6xl px-4 py-3">
           {/* Progress bar - clickable */}
           <div
             ref={progressRef}
-            className="absolute top-0 left-0 right-0 h-1 bg-gray-700 cursor-pointer group"
+            className="absolute top-0 right-0 left-0 h-1 cursor-pointer bg-gray-700/80 group"
             onClick={handleProgressClick}
             onTouchStart={handleTouchProgress}
           >
             <div
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 relative group-hover:from-blue-400 group-hover:to-purple-400 transition"
+              className="relative h-full bg-gradient-to-r from-blue-500 to-purple-500 transition group-hover:from-blue-400 group-hover:to-purple-400"
               style={{ width: `${progressPercentage}%` }}
             >
-              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition" />
+              <div className="absolute top-1/2 right-0 h-3 w-3 -translate-y-1/2 rounded-full bg-white opacity-0 transition group-hover:opacity-100" />
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4">
-            {/* Track info - clickable on mobile to show full progress */}
-            <div
-              className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
-              onClick={() => isMobile && setShowMobileProgress(true)}
-            >
-              {/* Album art placeholder */}
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                {currentTrack.cover_image_url ? (
-                  <img
-                    src={currentTrack.cover_image_url}
-                    alt={currentTrack.title}
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                ) : (
-                  <span className="text-white text-xs">Audio</span>
-                )}
-              </div>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-gradient-to-br from-blue-500 to-purple-500">
+              {currentTrack.cover_image_url ? (
+                <AppImage
+                  src={currentTrack.cover_image_url}
+                  alt={currentTrack.title}
+                  fill
+                  sizes="48px"
+                  className="rounded-sm object-cover"
+                />
+              ) : (
+                <span className="text-white text-xs">Audio</span>
+              )}
+            </div>
 
-              <div className="min-w-0 flex-1">
-                <h4 className="text-white text-sm font-medium truncate">
-                  {currentTrack.title}
-                </h4>
-                {currentTrack.artist && (
-                  <p className="text-gray-400 text-xs truncate">
+            <div className="min-w-0 flex-1">
+              <h4 className="truncate text-sm font-medium text-white">
+                {currentTrack.title}
+              </h4>
+              <div className="flex items-center gap-2">
+                {currentTrack.artist ? (
+                  <p className="truncate text-xs text-gray-400">
                     {currentTrack.artist}
                   </p>
-                )}
+                ) : null}
+                <p className="text-xs text-white/65 sm:hidden">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </p>
               </div>
             </div>
 
-            {/* Mobile: Show time and play button compact */}
-            {isMobile ? (
-              <div className="flex items-center gap-3">
-                <div className="text-white text-xs">
-                  {formatTime(currentTime)} / {formatTime(duration)}
-                </div>
-                <button
-                  onClick={toggle}
-                  disabled={isLoading}
-                  className="bg-white text-black p-2 rounded-full w-10 h-10 flex items-center justify-center disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : isPlaying ? (
-                    <Pause size={20} fill="black" />
-                  ) : (
-                    <Play size={20} fill="black" className="ml-0.5" />
-                  )}
-                </button>
-              </div>
-            ) : (
-              /* Desktop layout */
-              <>
-                {/* Playback controls */}
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => seek(Math.max(0, currentTime - 10))}
-                    className="text-gray-400 hover:text-white transition p-1"
-                    title="Back 10 seconds"
-                  >
-                    <SkipBack size={20} />
-                  </button>
+            <div className="hidden text-sm text-white/80 sm:block">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </div>
 
-                  <button
-                    onClick={toggle}
-                    disabled={isLoading}
-                    className="bg-white text-black p-2 rounded-full w-10 h-10 flex items-center justify-center hover:scale-105 transition disabled:opacity-50"
-                  >
-                    {isLoading ? (
-                      <Loader2 size={20} className="animate-spin" />
-                    ) : isPlaying ? (
-                      <Pause size={20} fill="black" />
-                    ) : (
-                      <Play size={20} fill="black" className="ml-0.5" />
-                    )}
-                  </button>
+            <button
+              onClick={() => void toggle()}
+              disabled={isLoading}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition hover:scale-105 disabled:opacity-50"
+              aria-label={isPlaying ? "Pause playback" : "Play mix"}
+            >
+              {isLoading ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : isPlaying ? (
+                <Pause size={20} fill="black" />
+              ) : (
+                <Play size={20} fill="black" className="ml-0.5" />
+              )}
+            </button>
 
-                  <button
-                    onClick={() => seek(Math.min(duration, currentTime + 10))}
-                    className="text-gray-400 hover:text-white transition p-1"
-                    title="Forward 10 seconds"
-                  >
-                    <SkipForward size={20} />
-                  </button>
-                </div>
+            <div className="hidden items-center gap-2 lg:flex">
+              <button
+                onClick={toggleMute}
+                className="p-1 text-gray-400 transition hover:text-white"
+                aria-label={isMuted || volume === 0 ? "Unmute" : "Mute"}
+              >
+                {isMuted || volume === 0 ? (
+                  <VolumeX size={18} />
+                ) : (
+                  <Volume2 size={18} />
+                )}
+              </button>
 
-                {/* Time display */}
-                <div className="text-white text-sm">
-                  {formatTime(currentTime)} / {formatTime(duration)}
-                </div>
-
-                {/* Volume control */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={toggleMute}
-                    className="text-gray-400 hover:text-white transition p-1"
-                  >
-                    {isMuted || volume === 0 ? (
-                      <VolumeX size={20} />
-                    ) : (
-                      <Volume2 size={20} />
-                    )}
-                  </button>
-
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={isMuted ? 0 : volume}
-                    onChange={handleVolumeChange}
-                    className="w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                    style={{
-                      background: `linear-gradient(to right, white 0%, white ${(isMuted ? 0 : volume) * 100}%, #4a5568 ${(isMuted ? 0 : volume) * 100}%, #4a5568 100%)`,
-                    }}
-                  />
-                </div>
-              </>
-            )}
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={isMuted ? 0 : volume}
+                onChange={handleVolumeChange}
+                className="h-1 w-24 cursor-pointer appearance-none rounded-lg bg-gray-600"
+                style={{
+                  background: `linear-gradient(to right, white 0%, white ${(isMuted ? 0 : volume) * 100}%, #4a5568 ${(isMuted ? 0 : volume) * 100}%, #4a5568 100%)`,
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
