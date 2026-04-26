@@ -78,14 +78,14 @@ export default async function MixPage({
               />
             ) : (
               <div className="flex aspect-square w-full  items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-2xl md:w-64">
-                DJ Mr Jay Mix
+                DJ Mr Jay Mixes
               </div>
             )}
 
             {/* Info */}
             <div className="flex-1">
               <p className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
-                DJ Mr Jay Mix
+                DJ Mr Jay Mixes
               </p>
 
               <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground md:text-5xl">

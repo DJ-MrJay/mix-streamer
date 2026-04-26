@@ -62,12 +62,12 @@ export default function MixGrid({ mixes }: { mixes: Mix[] }) {
           </h1>
         </div>
 
-        <p className="text-sm text-muted-foreground">
+        {/* <p className="text-sm text-muted-foreground">
           {filteredMixes.length} {filteredMixes.length === 1 ? 'mix' : 'mixes'}
           {normalizedQuery
             ? ` matching "${trimmedSearchValue}"`
             : ' ready to play'}
-        </p>
+        </p> */}
       </div>
 
       {filteredMixes.length ? (
