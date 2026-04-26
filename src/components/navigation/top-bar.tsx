@@ -142,7 +142,7 @@ export default function TopBar({
             className="flex min-w-0 items-center gap-3"
             aria-label="Go to home"
           >
-            <div className="relative flex size-11 items-center justify-center overflow-hidden bg-card/80 shadow-[0_10px_25px_rgba(0,0,0,0.18)] sm:size-14">
+            <div className="relative flex size-11 items-center justify-center overflow-hidden bg-card/80 sm:size-14">
               <AppImage
                 src="/djmrjay-logo-light.svg"
                 alt=""

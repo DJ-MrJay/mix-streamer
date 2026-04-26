@@ -83,7 +83,7 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
     <div
       onClick={handleCardClick}
       className={`group relative cursor-pointer overflow-hidden rounded-sm bg-card text-card-foreground shadow-[0_18px_40px_rgba(0,0,0,0.24)] transition-all duration-300 hover:border-foreground/15 hover:shadow-[0_24px_48px_rgba(0,0,0,0.32)] ${
-        isCurrentTrack ? "border-primary/30 ring-1 ring-primary/30" : ""
+        isCurrentTrack ? "border-primary/30 ring-2 ring-primary/30" : ""
       }`}
     >
       {/* Album Art */}
