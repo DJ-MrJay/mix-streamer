@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Moon, Search, SunMedium, X } from "lucide-react";
 
 import AppImage from "@/components/ui/app-image";
@@ -23,10 +24,14 @@ export default function TopBar({
   searchValue = "",
   onSearchValueChange,
 }: TopBarProps) {
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
   const searchEnabled = typeof onSearchValueChange === "function";
+  const searchVisible = searchEnabled && isHomePage;
   const [theme, setTheme] = useState<AppTheme>("dark");
   const [isMounted, setIsMounted] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const searchAreaRef = useRef<HTMLDivElement>(null);
   const desktopSearchRef = useRef<HTMLInputElement>(null);
   const mobileSearchRef = useRef<HTMLInputElement>(null);
   const mobileSearchId = useId();
@@ -55,6 +60,36 @@ export default function TopBar({
     }
   }, [isMobileSearchOpen]);
 
+  const clearAndCloseSearch = useCallback(() => {
+    setIsMobileSearchOpen(false);
+    onSearchValueChange?.("");
+    desktopSearchRef.current?.blur();
+    mobileSearchRef.current?.blur();
+  }, [onSearchValueChange]);
+
+  useEffect(() => {
+    if (!searchVisible || (!isMobileSearchOpen && !searchValue)) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+
+      if (searchAreaRef.current?.contains(event.target)) {
+        return;
+      }
+
+      window.setTimeout(() => {
+        clearAndCloseSearch();
+      }, 0);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [clearAndCloseSearch, isMobileSearchOpen, searchValue, searchVisible]);
+
   const handleThemeToggle = () => {
     const nextTheme: AppTheme = theme === "dark" ? "light" : "dark";
     applyThemeToDocument(nextTheme);
@@ -63,7 +98,7 @@ export default function TopBar({
   };
 
   const handleSearchButtonClick = () => {
-    if (!searchEnabled) {
+    if (!searchVisible) {
       return;
     }
 
@@ -72,28 +107,36 @@ export default function TopBar({
       return;
     }
 
-    setIsMobileSearchOpen(true);
-  };
-
-  const closeMobileSearch = () => {
-    setIsMobileSearchOpen(false);
-    if (!searchValue) {
+    if (isMobileSearchOpen) {
+      clearAndCloseSearch();
       return;
     }
 
-    onSearchValueChange?.("");
+    setIsMobileSearchOpen(true);
+  };
+
+  const handleSearchInputKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key !== "Escape") {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    clearAndCloseSearch();
   };
 
   const searchInputClassName =
-    "h-10 rounded-full border-0 bg-card/75 pr-10 pl-11 text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)] backdrop-blur-sm placeholder:text-muted-foreground focus-visible:ring-ring/60";
+    "h-10 rounded-full border-2 bg-card/75 pr-10 pl-11 text-foreground backdrop-blur-sm placeholder:text-muted-foreground focus-visible:ring-ring/60";
 
   const themeToggleLabel =
     theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
 
   return (
     <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-xl">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3">
-        <div className="flex items-center gap-4">
+      <div className="mx-auto w-full max-w-6xl px-4 py-3">
+        <div className="relative flex items-center gap-4">
           <Link
             href="/"
             className="flex min-w-0 items-center gap-3"
@@ -119,77 +162,91 @@ export default function TopBar({
             </div>
           </Link>
 
-          {searchEnabled && (
-            <div className="relative ml-auto hidden w-full max-w-sm sm:block">
-              <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                ref={desktopSearchRef}
-                value={searchValue}
-                onChange={(event) => onSearchValueChange?.(event.target.value)}
-                placeholder="Search title, artist, genre, or description"
-                className={searchInputClassName}
-                aria-label="Search mixes"
-              />
-              {searchValue ? (
+          <div className="ml-auto flex items-center gap-2">
+            {searchVisible ? (
+              <div ref={searchAreaRef} className="relative">
+                <div className="relative hidden w-[min(24rem,calc(100vw-8rem))] sm:block">
+                  <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    ref={desktopSearchRef}
+                    value={searchValue}
+                    onChange={(event) =>
+                      onSearchValueChange?.(event.target.value)
+                    }
+                    onKeyDown={handleSearchInputKeyDown}
+                    placeholder="Search title, artist, genre, or description"
+                    className={searchInputClassName}
+                    aria-label="Search mixes"
+                  />
+                  {searchValue ? (
+                    <button
+                      type="button"
+                      aria-label="Clear search"
+                      onClick={() => onSearchValueChange?.("")}
+                      className="absolute top-1/2 right-3 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  ) : null}
+                </div>
+
                 <button
                   type="button"
-                  aria-label="Clear search"
-                  onClick={() => onSearchValueChange?.("")}
-                  className="absolute top-1/2 right-3 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+                  className="rounded-full p-2 transition-colors hover:bg-muted sm:hidden"
+                  onClick={handleSearchButtonClick}
+                  aria-label={
+                    isMobileSearchOpen ? "Close search" : "Search mixes"
+                  }
+                  aria-controls={mobileSearchId}
+                  aria-expanded={isMobileSearchOpen}
                 >
-                  <X className="size-4" />
+                  <Search className="size-6 text-foreground" />
                 </button>
-              ) : null}
-            </div>
-          )}
 
-          <div className="ml-auto flex items-center gap-2 sm:ml-0">
-            <div
+                <div
+                  id={mobileSearchId}
+                  data-state={isMobileSearchOpen ? "open" : "closed"}
+                  className="absolute right-0 top-full mt-3 w-[min(22rem,calc(100vw-2rem))] transition-all duration-200 ease-out data-[state=closed]:pointer-events-none data-[state=closed]:-translate-y-2 data-[state=closed]:opacity-0 data-[state=open]:translate-y-0 data-[state=open]:opacity-100 sm:hidden"
+                >
+                  <div className="relative rounded-2xl bg-background/95 shadow-[0_24px_48px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+                    <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      ref={mobileSearchRef}
+                      value={searchValue}
+                      onChange={(event) =>
+                        onSearchValueChange?.(event.target.value)
+                      }
+                      onKeyDown={handleSearchInputKeyDown}
+                      placeholder="Search title, artist, album, genre, or description"
+                      className={searchInputClassName}
+                      aria-label="Search mixes"
+                    />
+                    <button
+                      type="button"
+                      aria-label={
+                        searchValue ? "Clear search and close" : "Close search"
+                      }
+                      onClick={clearAndCloseSearch}
+                      className="absolute top-1/2 right-3 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <button
+              type="button"
               onClick={handleThemeToggle}
-              className="cursor-pointer rounded-full p-2 transition-colors hover:bg-muted"
+              className="rounded-full p-2 transition-colors hover:bg-muted"
               aria-label={isMounted ? themeToggleLabel : "Toggle theme"}
             >
               <SunMedium className="hidden size-6 dark:block text-foreground" />
               <Moon className="size-6 dark:hidden text-foreground" />
-            </div>
-
-            {searchEnabled ? (
-              <div
-                className="cursor-pointer rounded-full p-2 transition-colors hover:bg-muted"
-                onClick={handleSearchButtonClick}
-                aria-label="Search mixes"
-                aria-controls={mobileSearchId}
-                aria-expanded={isMobileSearchOpen}
-              >
-                <Search className="text-foreground size-6" />
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        {searchEnabled && isMobileSearchOpen ? (
-          <div id={mobileSearchId} className="relative sm:hidden">
-            <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2" />
-            <Input
-              ref={mobileSearchRef}
-              value={searchValue}
-              onChange={(event) => onSearchValueChange?.(event.target.value)}
-              placeholder="Search title, artist, genre, or description"
-              className={searchInputClassName}
-              aria-label="Search mixes"
-            />
-            <button
-              type="button"
-              aria-label={
-                searchValue ? "Clear search and close" : "Close search"
-              }
-              onClick={closeMobileSearch}
-              className="absolute top-1/2 right-3 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
-            >
-              <X className="size-4" />
             </button>
           </div>
-        ) : null}
+        </div>
       </div>
     </header>
   );

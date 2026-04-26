@@ -1,15 +1,20 @@
-'use client'
+"use client";
 
-import { SearchX } from 'lucide-react'
-import { useDeferredValue } from 'react'
+import { SearchX } from "lucide-react";
+import { useDeferredValue } from "react";
 
-import MixCard from '@/components/mix/mix-card'
-import { useTopBarSearch } from '@/components/navigation/top-bar-provider'
-import { getDisplayTrackInfo } from '@/lib/mix-display'
-import type { MixRecord } from '@/types/mix'
+import MixCard from "@/components/mix/mix-card";
+import { useTopBarSearch } from "@/components/navigation/top-bar-provider";
+import { getDisplayTrackInfo } from "@/lib/mix-display";
+import type { MixRecord } from "@/types/mix";
+
+const collapseWhitespace = (value: string) => value.replace(/\s+/g, " ").trim();
+
+const normalizeSearchText = (value: string) =>
+  collapseWhitespace(value).toLowerCase();
 
 const getSearchableText = (mix: MixRecord) => {
-  const trackInfo = getDisplayTrackInfo(mix)
+  const trackInfo = getDisplayTrackInfo(mix);
 
   return [
     mix.title,
@@ -17,23 +22,24 @@ const getSearchableText = (mix: MixRecord) => {
     mix.artist,
     trackInfo.artist,
     mix.album,
-    mix.genre?.join(' '),
-    mix.year ? String(mix.year) : null,
+    mix.genre?.join(" "),
     mix.description,
   ]
     .filter(Boolean)
-    .join(' ')
-    .toLowerCase()
-}
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+};
 
 export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
-  const { searchValue } = useTopBarSearch()
-  const deferredSearchValue = useDeferredValue(searchValue)
-  const normalizedQuery = deferredSearchValue.trim().toLowerCase()
+  const { searchValue } = useTopBarSearch();
+  const deferredSearchValue = useDeferredValue(searchValue);
+  const normalizedQuery = normalizeSearchText(deferredSearchValue);
+  const displayQuery = collapseWhitespace(searchValue);
 
   const filteredMixes = normalizedQuery
     ? mixes.filter((mix) => getSearchableText(mix).includes(normalizedQuery))
-    : mixes
+    : mixes;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6">
@@ -46,13 +52,6 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
             The Mix Crate
           </h1>
         </div>
-
-        {/* <p className="text-sm text-muted-foreground">
-          {filteredMixes.length} {filteredMixes.length === 1 ? 'mix' : 'mixes'}
-          {normalizedQuery
-            ? ` matching "${trimmedSearchValue}"`
-            : ' ready to play'}
-        </p> */}
       </div>
 
       {filteredMixes.length ? (
@@ -67,13 +66,13 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
             <SearchX className="size-6" />
           </div>
           <h2 className="text-lg font-semibold text-foreground">
-            No mixes matched your search
+            No matching files found
           </h2>
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Try a different title, artist, album, or keyword from the mix description.
+            Try a different title, artist, genre, or keyword from the mix description.
           </p>
         </div>
       )}
     </div>
-  )
+  );
 }
