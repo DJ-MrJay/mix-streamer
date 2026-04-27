@@ -1,58 +1,58 @@
-// src/app/(player)/mix/[slug]/page.tsx
-
-import { getSupabase } from '@/lib/supabase'
-import { getDisplayTrackInfo } from '@/lib/mix-display'
-import type { MixRecord } from '@/types/mix'
-import PlayButton from '@/components/mix/play-button'
-import AppImage from '@/components/ui/app-image'
+import { getSupabase } from "@/lib/supabase";
+import { getDisplayTrackInfo } from "@/lib/mix-display";
+import { TRACKLISTS } from "@/data/tracklists";
+import type { MixRecord } from "@/types/mix";
+import PlayButton from "@/components/mix/play-button";
+import AppImage from "@/components/ui/app-image";
 
 export default async function MixPage({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params
-  const supabase = getSupabase()
+  const { slug } = await params;
+  const supabase = getSupabase();
 
   const { data } = await supabase
-    .from('mixes')
-    .select('*')
-    .eq('slug', slug)
-    .single()
-  const mix = data as MixRecord | null
+    .from("mixes")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+
+  const mix = data as MixRecord | null;
 
   if (!mix) {
-    return <div className="p-6 text-foreground">Mix not found</div>
+    return <div className="p-6 text-foreground">Mix not found</div>;
   }
 
-  const trackInfo = getDisplayTrackInfo(mix)
+  const trackInfo = getDisplayTrackInfo(mix);
+  const tracklist = TRACKLISTS[mix.slug ?? slug] ?? [];
 
   const formatDuration = (seconds?: number) => {
-    if (!seconds) return null
-    const h = Math.floor(seconds / 3600)
-    const m = Math.floor((seconds % 3600) / 60)
-    const s = seconds % 60
+    if (!seconds) return null;
+
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
 
     if (h > 0) {
-      return `${h}:${m.toString().padStart(2, '0')}:${s
+      return `${h}:${m.toString().padStart(2, "0")}:${s
         .toString()
-        .padStart(2, '0')}`
+        .padStart(2, "0")}`;
     }
-    return `${m}:${s.toString().padStart(2, '0')}`
-  }
+
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
 
   const metadataPills = [
-    // mix.album ? `Album: ${mix.album}` : null,
     mix.year ? `Year: ${mix.year}` : null,
-    mix.genre?.length ? `Genre: ${mix.genre.join(', ')}` : null,
+    mix.genre?.length ? `Genre: ${mix.genre.join(", ")}` : null,
     mix.duration ? `Length: ${formatDuration(mix.duration)}` : null,
-  ].filter(Boolean) as string[]
+  ].filter(Boolean) as string[];
 
   return (
     <div className="min-h-screen bg-background pb-28 text-foreground">
-      {/* HERO */}
       <div className="relative overflow-hidden border-b border-border">
-        {/* Background blur */}
         {mix.cover_image_url && (
           <div className="absolute inset-0">
             <AppImage
@@ -69,7 +69,6 @@ export default async function MixPage({
 
         <div className="relative mx-auto max-w-6xl px-4 pt-8 pb-8">
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-end">
-            {/* Cover */}
             {mix.cover_image_url ? (
               <AppImage
                 src={mix.cover_image_url}
@@ -78,15 +77,14 @@ export default async function MixPage({
                 height={640}
                 preload
                 sizes="(max-width: 768px) 100vw, 256px"
-                className="aspect-square w-full  rounded-lg border border-border object-cover shadow-2xl md:w-64"
+                className="aspect-square w-full rounded-lg border border-border object-cover shadow-2xl md:w-64"
               />
             ) : (
-              <div className="flex aspect-square w-full  items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-2xl md:w-64">
+              <div className="flex aspect-square w-full items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-2xl md:w-64">
                 DJ Mr Jay Mixes
               </div>
             )}
 
-            {/* Info */}
             <div className="flex-1">
               <p className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
                 DJ Mr Jay Mixes
@@ -97,7 +95,9 @@ export default async function MixPage({
               </h1>
 
               {trackInfo.artist && (
-                <p className="mb-2 text-base text-muted-foreground md:text-lg">{trackInfo.artist}</p>
+                <p className="mb-2 text-base text-muted-foreground md:text-lg">
+                  {trackInfo.artist}
+                </p>
               )}
 
               {metadataPills.length ? (
@@ -113,7 +113,6 @@ export default async function MixPage({
                 </div>
               ) : null}
 
-              {/* PLAY BUTTON */}
               <PlayButton
                 mix={{
                   id: mix.id,
@@ -131,27 +130,55 @@ export default async function MixPage({
         </div>
       </div>
 
-      {/* CONTENT */}
       <div className="mx-auto mt-6 flex max-w-6xl flex-col gap-6 px-4">
-        {/* Description */}
         {mix.description && (
           <section className="rounded-lg border border-border bg-card/80 p-5 shadow-lg backdrop-blur-sm">
             <h2 className="mb-2 text-lg font-semibold text-foreground">
               About this mix
             </h2>
-            <p className="leading-relaxed text-muted-foreground">{mix.description}</p>
+            <p className="leading-relaxed text-muted-foreground">
+              {mix.description}
+            </p>
           </section>
         )}
 
-        {/* Placeholder tracklist */}
         <section className="rounded-lg border border-border bg-card/80 p-5 shadow-lg backdrop-blur-sm">
-          <h2 className="mb-4 text-lg font-semibold text-foreground">
-            Tracklist
-          </h2>
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">
+                Tracklist
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {tracklist.length
+                  ? `${tracklist.length} tracks in this mix`
+                  : "Tracklist will be added soon"}
+              </p>
+            </div>
+          </div>
 
-          <div className="text-sm text-muted-foreground">Tracklist coming soon</div>
+          {tracklist.length ? (
+            <ol className="columns-1 md:columns-2 gap-10 space-y-2">
+              {tracklist.map((track, index) => (
+                <li
+                  key={`${track}-${index}`}
+                  className="break-inside-avoid flex gap-3 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-background/60 hover:text-foreground"
+                >
+                  <span className="w-7 shrink-0 text-right font-mono text-xs text-muted-foreground/70">
+                    {index + 1}.
+                  </span>
+                  <span className="min-w-0 flex-1 leading-relaxed">
+                    {track}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border bg-background/40 p-4 text-sm text-muted-foreground">
+              Tracklist coming soon
+            </div>
+          )}
         </section>
       </div>
     </div>
-  )
+  );
 }
