@@ -1,0 +1,38 @@
+
+> mix-streamer@0.1.0 build
+> next build --debug
+
+▲ Next.js 16.2.4 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 120s
+  Running TypeScript ...
+  Finished TypeScript in 2.7min ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/4) ...
+  Generating static pages using 3 workers (1/4) 
+  Generating static pages using 3 workers (2/4) 
+  Generating static pages using 3 workers (3/4) 
+✓ Generating static pages using 3 workers (4/4) in 1278ms
+  Finalizing page optimization ...
+
+
+Redirects
+┌ source: /:path+/
+├ destination: /:path+
+└ permanent: true
+
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /admin/metadata
+├ ƒ /api/admin/mixes/metadata
+├ ƒ /api/stream/[id]
+└ ƒ /mix/[slug]
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

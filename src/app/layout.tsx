@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { helveticaNowDisplay } from "@/app/fonts";
 import { getThemeScript } from "@/lib/theme";
 import "./globals.css";
 
@@ -13,7 +14,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${helveticaNowDisplay.variable} dark`}
+      suppressHydrationWarning
+    >
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
         <script dangerouslySetInnerHTML={{ __html: getThemeScript() }} />
         {children}
