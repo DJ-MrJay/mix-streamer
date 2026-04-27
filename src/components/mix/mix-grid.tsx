@@ -35,7 +35,6 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
   const { searchValue } = useTopBarSearch();
   const deferredSearchValue = useDeferredValue(searchValue);
   const normalizedQuery = normalizeSearchText(deferredSearchValue);
-  const displayQuery = collapseWhitespace(searchValue);
 
   const filteredMixes = normalizedQuery
     ? mixes.filter((mix) => getSearchableText(mix).includes(normalizedQuery))
