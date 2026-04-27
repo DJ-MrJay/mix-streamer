@@ -1,7 +1,10 @@
 import { Readable } from 'node:stream'
 import { NextRequest } from 'next/server'
-import { drive } from '@/lib/google-drive'
-import { supabase } from '@/lib/supabase'
+import { getDrive } from '@/lib/google-drive'
+import { getSupabase } from '@/lib/supabase'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 type AudioFileDetails = {
   fileId: string
@@ -59,6 +62,8 @@ const getContentType = (fileName: string, mimeType: string) => {
 }
 
 const getAudioFileDetails = async (mixId: string): Promise<AudioFileDetails | null> => {
+  const supabase = getSupabase()
+  const drive = getDrive()
   const mixesTable = supabase.from('mixes') as unknown as MixDriveLookupTable
   const { data: mix, error } = await mixesTable
     .select('drive_file_id')
@@ -169,6 +174,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const drive = getDrive()
     const params = await context.params
     const fileDetails = await getAudioFileDetails(params.id)
 

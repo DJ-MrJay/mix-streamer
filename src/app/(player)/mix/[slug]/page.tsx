@@ -1,6 +1,6 @@
 // src/app/(player)/mix/[slug]/page.tsx
 
-import { supabase } from '@/lib/supabase'
+import { getSupabase } from '@/lib/supabase'
 import { getDisplayTrackInfo } from '@/lib/mix-display'
 import type { MixRecord } from '@/types/mix'
 import PlayButton from '@/components/mix/play-button'
@@ -12,6 +12,7 @@ export default async function MixPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  const supabase = getSupabase()
 
   const { data } = await supabase
     .from('mixes')

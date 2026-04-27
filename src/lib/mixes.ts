@@ -1,8 +1,9 @@
 import type { MixRecord } from '@/types/mix'
 
-import { supabase } from './supabase'
+import { getSupabase } from './supabase'
 
 export async function getMixes(): Promise<MixRecord[]> {
+  const supabase = getSupabase()
   const { data, error } = await supabase
     .from('mixes')
     .select('*')

@@ -2,7 +2,7 @@ import 'server-only'
 
 import type { Readable } from 'node:stream'
 
-import { drive } from '@/lib/google-drive'
+import { getDrive } from '@/lib/google-drive'
 
 export type AudioFileDetails = {
   fileId: string
@@ -49,6 +49,7 @@ export const getContentType = (fileName: string, mimeType: string) => {
 export const getAudioFileDetailsByDriveFileId = async (
   driveFileId: string
 ): Promise<AudioFileDetails> => {
+  const drive = getDrive()
   const fileMetadata = await drive.files.get({
     fileId: driveFileId,
     fields: 'size, mimeType, name',
@@ -66,6 +67,7 @@ export const getAudioFileDetailsByDriveFileId = async (
 }
 
 export const getDriveFileStream = async (driveFileId: string) => {
+  const drive = getDrive()
   const response = await drive.files.get(
     {
       fileId: driveFileId,
