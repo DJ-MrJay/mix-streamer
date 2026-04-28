@@ -81,7 +81,7 @@ export default async function MixPage({
               />
             ) : (
               <div className="flex aspect-square w-full items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-2xl md:w-64">
-                DJ Mr Jay Mixes
+                Cover Unavailable
               </div>
             )}
 
@@ -133,7 +133,7 @@ export default async function MixPage({
       <div className="mx-auto mt-6 flex max-w-6xl flex-col gap-6 px-4">
         {mix.description && (
           <section className="rounded-lg border border-border bg-card/80 p-5 shadow-lg backdrop-blur-sm">
-            <h2 className="mb-2 text-lg font-semibold text-foreground">
+            <h2 className="capitalize mb-2 text-lg font-semibold text-foreground">
               About this mix
             </h2>
             <p className="leading-relaxed text-muted-foreground">
@@ -174,7 +174,7 @@ export default async function MixPage({
             </ol>
           ) : (
             <div className="rounded-lg border border-dashed border-border bg-background/40 p-4 text-sm text-muted-foreground">
-              Tracklist coming soon
+              
             </div>
           )}
         </section>

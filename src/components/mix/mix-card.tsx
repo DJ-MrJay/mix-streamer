@@ -82,7 +82,7 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative cursor-pointer overflow-hidden rounded-sm bg-card text-card-foreground shadow-[0_18px_40px_rgba(0,0,0,0.24)] transition-all duration-300 hover:border-foreground/15 hover:shadow-[0_24px_48px_rgba(0,0,0,0.32)] ${
+      className={`group relative cursor-pointer overflow-hidden rounded-sm bg-card text-card-foreground transition-all duration-800 hover:ring-6 hover:ring-muted  ${
         isCurrentTrack ? "border-primary/30 ring-2 ring-primary/30" : ""
       }`}
     >
@@ -94,7 +94,7 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
             alt={mix.title}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            className="object-cover"
             onError={() => setImageError(true)}
           />
         ) : (
@@ -110,7 +110,7 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
         )}
 
         {/* Hover overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
         {/* Play button */}
         <button
@@ -118,37 +118,53 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
           type="button"
           className="absolute inset-0 flex items-center justify-center opacity-100 transition-all duration-300 md:opacity-0 md:group-hover:opacity-100"
         >
-          <div className="rounded-full bg-primary p-4 text-primary-foreground shadow-2xl transition-transform md:group-hover:scale-110">
+          <div className="rounded-full bg-primary/95 p-3 text-primary-foreground shadow-2xl transition-transform md:group-hover:scale-110">
             {isCurrentlyLoading ? (
-              <Loader2 size={32} className="animate-spin" />
+              <Loader2 size={28} className="animate-spin" />
             ) : isCurrentlyPlaying ? (
-              <Pause size={32} fill="currentColor" />
+              <Pause size={28} fill="currentColor" />
             ) : (
-              <Play size={32} fill="currentColor" className="ml-1" />
+              <Play size={28} fill="currentColor" className="ml-1" />
             )}
           </div>
         </button>
 
         {/* Duration */}
         {duration && (
-          <div className="absolute right-2 bottom-2 rounded-md border border-border/60 bg-background/80 px-2 py-1 font-mono text-xs text-foreground backdrop-blur-sm">
+          <div className="absolute right-2 bottom-2 rounded-md bg-background/90 px-2 py-1 font-mono text-xs text-foreground ">
             {duration}
           </div>
         )}
 
+        {/* Loading badge */}
+        {isCurrentTrack && isCurrentlyLoading && (
+          <div className="absolute top-2 left-2 flex items-center gap-2 rounded-full bg-black/80 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
+            <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+            <span>LOADING</span>
+          </div>
+        )}
+
         {/* Playing badge */}
-        {isCurrentTrack && isPlaying && (
-          <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">
-            <div className="h-2 w-2 rounded-full bg-current animate-pulse" />
+        {isCurrentTrack && isPlaying && !isCurrentlyLoading && (
+          <div className="absolute top-2 left-2 flex items-center gap-2 rounded-full bg-green-600 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
+            <div className="h-2 w-2 rounded-full bg-white " />
             <span>PLAYING</span>
+          </div>
+        )}
+
+        {/* Paused badge */}
+        {isCurrentTrack && !isPlaying && !isCurrentlyLoading && (
+          <div className="absolute top-2 left-2 flex items-center gap-2 rounded-full bg-red-600 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
+            <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
+            <span>PAUSED</span>
           </div>
         )}
       </div>
 
       {/* Info */}
-      <div className="p-4">
+      <div className="p-3 md:p-4">
         <h3
-          className="mb-1 truncate text-base font-semibold text-foreground"
+          className="mb-1 text-base font-semibold text-foreground"
           title={trackInfo.title}
         >
           {trackInfo.title}

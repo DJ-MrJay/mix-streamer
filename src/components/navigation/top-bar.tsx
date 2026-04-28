@@ -128,7 +128,7 @@ export default function TopBar({
   };
 
   const searchInputClassName =
-    "h-10 rounded-full border-2 bg-card/75 pr-10 pl-11 text-foreground backdrop-blur-sm placeholder:text-muted-foreground focus-visible:ring-ring/60";
+    "h-10 rounded-full border-2 bg-card/75 pr-10 pl-11 text-foreground backdrop-blur-sm placeholder:text-muted-foreground focus-visible:ring-ring/20";
 
   const themeToggleLabel =
     theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
@@ -192,7 +192,7 @@ export default function TopBar({
 
                 <button
                   type="button"
-                  className="rounded-full p-2 transition-colors hover:bg-muted sm:hidden"
+                  className="rounded-full p-2 transition-colors bg-muted/50 hover:bg-muted sm:hidden"
                   onClick={handleSearchButtonClick}
                   aria-label={
                     isMobileSearchOpen ? "Close search" : "Search mixes"
@@ -208,7 +208,7 @@ export default function TopBar({
                   data-state={isMobileSearchOpen ? "open" : "closed"}
                   className="absolute right-0 top-full mt-3 w-[min(22rem,calc(100vw-2rem))] transition-all duration-200 ease-out data-[state=closed]:pointer-events-none data-[state=closed]:-translate-y-2 data-[state=closed]:opacity-0 data-[state=open]:translate-y-0 data-[state=open]:opacity-100 sm:hidden"
                 >
-                  <div className="relative rounded-2xl bg-background/95 shadow-[0_24px_48px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+                  <div className="relative rounded-2xl bg-background/95 backdrop-blur-xl">
                     <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       ref={mobileSearchRef}
@@ -239,7 +239,7 @@ export default function TopBar({
             <button
               type="button"
               onClick={handleThemeToggle}
-              className="rounded-full p-2 transition-colors hover:bg-muted"
+              className="rounded-full p-2 transition-colors bg-muted/50 hover:bg-muted"
               aria-label={isMounted ? themeToggleLabel : "Toggle theme"}
             >
               <SunMedium className="hidden size-6 dark:block text-foreground" />
