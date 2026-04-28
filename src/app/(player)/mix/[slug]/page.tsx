@@ -163,10 +163,10 @@ export default async function MixPage({
                   key={`${track}-${index}`}
                   className="break-inside-avoid flex gap-3 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-background/60 hover:text-foreground"
                 >
-                  <span className="w-7 shrink-0 text-right font-mono text-xs text-muted-foreground/70">
+                  <span className="w-7 text-right text-muted-foreground/70">
                     {index + 1}.
                   </span>
-                  <span className="min-w-0 flex-1 leading-relaxed">
+                  <span className="min-w-0 flex-1">
                     {track}
                   </span>
                 </li>
