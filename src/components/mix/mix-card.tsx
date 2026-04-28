@@ -12,8 +12,16 @@ import AppImage from "@/components/ui/app-image";
 export default function MixCard({ mix }: { mix: MixRecord }) {
   const router = useRouter();
 
-  const { currentTrack, setTrack, play, pause, isPlaying, isLoading } =
-    usePlayer();
+  const {
+    currentTrack,
+    setTrack,
+    play,
+    pause,
+    isPlaying,
+    isLoading,
+    currentTime,
+    duration: playerDuration,
+  } = usePlayer();
 
   const [imageError, setImageError] = useState(false);
 
@@ -46,6 +54,7 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
           id: mix.id,
           title: trackInfo.title,
           drive_file_id: mix.drive_file_id,
+          slug: mix.slug,
           cover_image_url: mix.cover_image_url ?? undefined,
           artist: trackInfo.artist,
           album: mix.album ?? null,
@@ -78,6 +87,9 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
   };
 
   const duration = formatDuration(mix.duration);
+  const progressPercentage = isCurrentTrack
+    ? (currentTime / playerDuration) * 100 || 0
+    : 0;
 
   return (
     <div
@@ -179,16 +191,13 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
         {/* Progress bar */}
         {isCurrentTrack && (
           <div className="mt-3">
-            <div className="h-1 overflow-hidden rounded-full bg-muted">
+            <div
+              aria-hidden="true"
+              className="h-1.5 overflow-hidden rounded-full bg-muted"
+            >
               <div
-                className="h-full bg-primary transition-all duration-300"
-                style={{
-                  width: `${
-                    (usePlayer.getState().currentTime /
-                      usePlayer.getState().duration) *
-                      100 || 0
-                  }%`,
-                }}
+                className="h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-400 to-purple-500 transition-all duration-300"
+                style={{ width: `${progressPercentage}%` }}
               />
             </div>
           </div>
