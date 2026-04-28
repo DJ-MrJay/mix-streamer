@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Moon, Search, SunMedium, X } from "lucide-react";
 
@@ -18,18 +17,20 @@ import {
 type TopBarProps = {
   searchValue?: string;
   onSearchValueChange?: (value: string) => void;
+  onSearchOpen?: () => void;
+  onSearchClose?: () => void;
 };
 
 export default function TopBar({
   searchValue = "",
   onSearchValueChange,
+  onSearchOpen,
+  onSearchClose,
 }: TopBarProps) {
-  const pathname = usePathname();
-  const isHomePage = pathname === "/";
   const searchEnabled = typeof onSearchValueChange === "function";
-  const searchVisible = searchEnabled && isHomePage;
   const [theme, setTheme] = useState<AppTheme>("dark");
   const [isMounted, setIsMounted] = useState(false);
+  const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const searchAreaRef = useRef<HTMLDivElement>(null);
   const desktopSearchRef = useRef<HTMLInputElement>(null);
@@ -55,20 +56,31 @@ export default function TopBar({
   }, []);
 
   useEffect(() => {
+    if (isDesktopSearchOpen) {
+      desktopSearchRef.current?.focus();
+    }
+  }, [isDesktopSearchOpen]);
+
+  useEffect(() => {
     if (isMobileSearchOpen) {
       mobileSearchRef.current?.focus();
     }
   }, [isMobileSearchOpen]);
 
   const clearAndCloseSearch = useCallback(() => {
+    setIsDesktopSearchOpen(false);
     setIsMobileSearchOpen(false);
     onSearchValueChange?.("");
+    onSearchClose?.();
     desktopSearchRef.current?.blur();
     mobileSearchRef.current?.blur();
-  }, [onSearchValueChange]);
+  }, [onSearchClose, onSearchValueChange]);
 
   useEffect(() => {
-    if (!searchVisible || (!isMobileSearchOpen && !searchValue)) {
+    if (
+      !searchEnabled ||
+      (!isDesktopSearchOpen && !isMobileSearchOpen && !searchValue)
+    ) {
       return;
     }
 
@@ -88,7 +100,13 @@ export default function TopBar({
 
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [clearAndCloseSearch, isMobileSearchOpen, searchValue, searchVisible]);
+  }, [
+    clearAndCloseSearch,
+    isDesktopSearchOpen,
+    isMobileSearchOpen,
+    searchEnabled,
+    searchValue,
+  ]);
 
   const handleThemeToggle = () => {
     const nextTheme: AppTheme = theme === "dark" ? "light" : "dark";
@@ -98,12 +116,13 @@ export default function TopBar({
   };
 
   const handleSearchButtonClick = () => {
-    if (!searchVisible) {
+    if (!searchEnabled) {
       return;
     }
 
     if (window.matchMedia("(min-width: 640px)").matches) {
-      desktopSearchRef.current?.focus();
+      onSearchOpen?.();
+      setIsDesktopSearchOpen(true);
       return;
     }
 
@@ -112,6 +131,7 @@ export default function TopBar({
       return;
     }
 
+    onSearchOpen?.();
     setIsMobileSearchOpen(true);
   };
 
@@ -128,7 +148,7 @@ export default function TopBar({
   };
 
   const searchInputClassName =
-    "h-10 rounded-full border-2 bg-card/75 pr-10 pl-11 text-foreground backdrop-blur-sm placeholder:text-muted-foreground focus-visible:ring-ring/20";
+    "h-10 rounded-full border-2 bg-card/75 pr-10 pl-11 text-foreground backdrop-blur-sm placeholder:text-muted-foreground focus-visible:ring-ring/0";
 
   const themeToggleLabel =
     theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
@@ -163,31 +183,49 @@ export default function TopBar({
           </Link>
 
           <div className="ml-auto flex items-center gap-2">
-            {searchVisible ? (
-              <div ref={searchAreaRef} className="relative">
-                <div className="relative hidden w-[min(24rem,calc(100vw-8rem))] sm:block">
-                  <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    ref={desktopSearchRef}
-                    value={searchValue}
-                    onChange={(event) =>
-                      onSearchValueChange?.(event.target.value)
-                    }
-                    onKeyDown={handleSearchInputKeyDown}
-                    placeholder="Search title, artist, genre, or description"
-                    className={searchInputClassName}
-                    aria-label="Search mixes"
-                  />
-                  {searchValue ? (
+            {searchEnabled ? (
+              <div ref={searchAreaRef} className="contents sm:relative">
+                <div className="hidden items-center justify-end gap-2 sm:flex">
+                  <div
+                    data-state={isDesktopSearchOpen ? "open" : "closed"}
+                    aria-hidden={!isDesktopSearchOpen}
+                    className="relative overflow-hidden transition-[width,opacity] duration-200 ease-out data-[state=closed]:pointer-events-none data-[state=closed]:w-0 data-[state=closed]:opacity-0 data-[state=open]:w-[min(24rem,calc(100vw-8rem))] data-[state=open]:opacity-100"
+                  >
+                    <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      ref={desktopSearchRef}
+                      value={searchValue}
+                      onChange={(event) =>
+                        onSearchValueChange?.(event.target.value)
+                      }
+                      onKeyDown={handleSearchInputKeyDown}
+                      placeholder="Search title, artist, genre, or description"
+                      className={searchInputClassName}
+                      aria-label="Search mixes"
+                      tabIndex={isDesktopSearchOpen ? 0 : -1}
+                    />
                     <button
                       type="button"
-                      aria-label="Clear search"
-                      onClick={() => onSearchValueChange?.("")}
+                      aria-label={
+                        searchValue ? "Clear search and close" : "Close search"
+                      }
+                      onClick={clearAndCloseSearch}
                       className="absolute top-1/2 right-3 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+                      tabIndex={isDesktopSearchOpen ? 0 : -1}
                     >
                       <X className="size-4" />
                     </button>
-                  ) : null}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="rounded-full bg-muted/50 p-2 transition-colors hover:bg-muted"
+                    onClick={handleSearchButtonClick}
+                    aria-label="Search mixes"
+                    aria-expanded={isDesktopSearchOpen}
+                  >
+                    <Search className="size-6 text-foreground" />
+                  </button>
                 </div>
 
                 <button
@@ -206,7 +244,7 @@ export default function TopBar({
                 <div
                   id={mobileSearchId}
                   data-state={isMobileSearchOpen ? "open" : "closed"}
-                  className="absolute right-0 top-full mt-3 w-[min(22rem,calc(100vw-2rem))] transition-all duration-200 ease-out data-[state=closed]:pointer-events-none data-[state=closed]:-translate-y-2 data-[state=closed]:opacity-0 data-[state=open]:translate-y-0 data-[state=open]:opacity-100 sm:hidden"
+                  className="absolute top-full left-1/2 mt-3 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 transition-all duration-200 ease-out data-[state=closed]:pointer-events-none data-[state=closed]:-translate-y-2 data-[state=closed]:opacity-0 data-[state=open]:translate-y-0 data-[state=open]:opacity-100 sm:hidden"
                 >
                   <div className="relative rounded-2xl bg-background/95 backdrop-blur-xl">
                     <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
