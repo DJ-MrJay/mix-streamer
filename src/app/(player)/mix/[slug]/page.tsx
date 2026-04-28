@@ -4,6 +4,8 @@ import { TRACKLISTS } from "@/data/tracklists";
 import type { MixRecord } from "@/types/mix";
 import PlayButton from "@/components/mix/play-button";
 import AppImage from "@/components/ui/app-image";
+import BackButton from "@/components/navigation/back-button";
+import { Download } from "lucide-react";
 
 export default async function MixPage({
   params,
@@ -51,7 +53,7 @@ export default async function MixPage({
   ].filter(Boolean) as string[];
 
   return (
-    <div className="min-h-screen bg-background pb-28 text-foreground">
+    <div className="min-h-screen bg-background pb-10 text-foreground">
       <div className="relative overflow-hidden border-b border-border">
         {mix.cover_image_url && (
           <div className="absolute inset-0">
@@ -68,6 +70,10 @@ export default async function MixPage({
         <div className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/75 to-background" />
 
         <div className="relative mx-auto max-w-6xl px-4 pt-8 pb-8">
+          <div className="mb-6">
+            <BackButton />
+          </div>
+
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-end">
             {mix.cover_image_url ? (
               <AppImage
@@ -113,18 +119,29 @@ export default async function MixPage({
                 </div>
               ) : null}
 
-              <PlayButton
-                mix={{
-                  id: mix.id,
-                  title: trackInfo.title,
-                  drive_file_id: mix.drive_file_id,
-                  cover_image_url: mix.cover_image_url ?? undefined,
-                  artist: trackInfo.artist,
-                  album: mix.album ?? null,
-                  genre: mix.genre ?? null,
-                  year: mix.year ?? null,
-                }}
-              />
+              <div className="flex flex-wrap items-center gap-3">
+                <PlayButton
+                  mix={{
+                    id: mix.id,
+                    title: trackInfo.title,
+                    drive_file_id: mix.drive_file_id,
+                    slug: mix.slug,
+                    cover_image_url: mix.cover_image_url ?? undefined,
+                    artist: trackInfo.artist,
+                    album: mix.album ?? null,
+                    genre: mix.genre ?? null,
+                    year: mix.year ?? null,
+                  }}
+                />
+                <a
+                  href={`/api/stream/${mix.id}?download=1`}
+                  download
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-6 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition hover:bg-muted"
+                >
+                  <Download className="size-5" />
+                  Download
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -161,21 +178,17 @@ export default async function MixPage({
               {tracklist.map((track, index) => (
                 <li
                   key={`${track}-${index}`}
-                  className="break-inside-avoid flex gap-3 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-background/60 hover:text-foreground"
+                  className="break-inside-avoid flex  rounded-md px-2 py-1 text-sm text-muted-foreground transition hover:bg-background/60 hover:text-foreground"
                 >
-                  <span className="w-7 text-right text-muted-foreground/70">
+                  <span className="w-7 text-left text-muted-foreground/70">
                     {index + 1}.
                   </span>
-                  <span className="min-w-0 flex-1">
-                    {track}
-                  </span>
+                  <span className="min-w-0 flex-1">{track}</span>
                 </li>
               ))}
             </ol>
           ) : (
-            <div className="rounded-lg border border-dashed border-border bg-background/40 p-4 text-sm text-muted-foreground">
-              
-            </div>
+            <div className="rounded-lg border border-dashed border-border bg-background/40 p-4 text-sm text-muted-foreground"></div>
           )}
         </section>
       </div>
