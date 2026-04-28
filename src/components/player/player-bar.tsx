@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AppImage from "@/components/ui/app-image";
 import { usePlayer } from "@/hooks/use-player";
 import { Play, Pause, Loader2, Volume2, VolumeX, X } from "lucide-react";
@@ -35,6 +36,8 @@ export default function PlayerBar() {
 
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false);
+  const [bottomOffset, setBottomOffset] = useState(16);
   const progressRef = useRef<HTMLDivElement>(null);
 
   // Update volume when changed
@@ -61,33 +64,69 @@ export default function PlayerBar() {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  // Handle progress bar click
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!progressRef.current || !duration) return;
+  const seekToClientX = useCallback(
+    (clientX: number) => {
+      if (!progressRef.current || !duration) return;
 
-    const rect = progressRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = x / rect.width;
-    const newTime = percentage * duration;
+      const rect = progressRef.current.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const percentage = Math.max(0, Math.min(1, x / rect.width));
+      const newTime = percentage * duration;
 
-    seek(newTime);
-  };
+      seek(newTime);
+    },
+    [duration, seek],
+  );
 
-  // Handle touch for mobile
-  const handleTouchProgress = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!progressRef.current || !duration) return;
+  const handleProgressPointerDown = (
+    event: React.PointerEvent<HTMLDivElement>,
+  ) => {
+    if (!duration) return;
 
-    const rect = progressRef.current.getBoundingClientRect();
-    const touch = e.touches[0];
-    const x = touch.clientX - rect.left;
-    const percentage = Math.max(0, Math.min(1, x / rect.width));
-    const newTime = percentage * duration;
+    event.preventDefault();
+    const pointerId = event.pointerId;
+    const target = event.currentTarget;
 
-    seek(newTime);
+    target.setPointerCapture(pointerId);
+    setIsSeeking(true);
+    seekToClientX(event.clientX);
+
+    const handlePointerMove = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.pointerId !== pointerId) {
+        return;
+      }
+
+      pointerEvent.preventDefault();
+      seekToClientX(pointerEvent.clientX);
+    };
+
+    const stopSeeking = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.pointerId !== pointerId) {
+        return;
+      }
+
+      setIsSeeking(false);
+
+      if (target.hasPointerCapture(pointerId)) {
+        target.releasePointerCapture(pointerId);
+      }
+
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopSeeking);
+      window.removeEventListener("pointercancel", stopSeeking);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, {
+      passive: false,
+    });
+    window.addEventListener("pointerup", stopSeeking);
+    window.addEventListener("pointercancel", stopSeeking);
   };
 
   // Calculate progress percentage
-  const progressPercentage = (currentTime / duration) * 100 || 0;
+  const progressPercentage = duration
+    ? Math.min(100, Math.max(0, (currentTime / duration) * 100))
+    : 0;
 
   // Toggle mute
   const toggleMute = () => {
@@ -141,55 +180,143 @@ export default function PlayerBar() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentTime, currentTrack, duration, seek, toggle]);
 
+  useEffect(() => {
+    if (!currentTrack) {
+      return;
+    }
+
+    const updateBottomOffset = () => {
+      const footer = document.querySelector<HTMLElement>(
+        "[data-player-footer]",
+      );
+
+      if (!footer) {
+        setBottomOffset(16);
+        return;
+      }
+
+      const footerRect = footer.getBoundingClientRect();
+      const footerVisibleHeight =
+        footerRect.top < window.innerHeight && footerRect.bottom > 0
+          ? Math.max(0, window.innerHeight - Math.max(footerRect.top, 0))
+          : 0;
+
+      setBottomOffset(footerVisibleHeight ? 28 + footerVisibleHeight : 16);
+    };
+
+    updateBottomOffset();
+    window.addEventListener("scroll", updateBottomOffset, { passive: true });
+    window.addEventListener("resize", updateBottomOffset);
+
+    return () => {
+      window.removeEventListener("scroll", updateBottomOffset);
+      window.removeEventListener("resize", updateBottomOffset);
+    };
+  }, [currentTrack]);
+
   // If no track is playing, don't render the player bar
   if (!currentTrack) {
     return null;
   }
 
+  const currentMixHref = currentTrack.slug ? `/mix/${currentTrack.slug}` : null;
+
   return (
     <>
       {/* Main player bar */}
-      <div className="fixed right-0 bottom-0 left-0 z-40 bg-gradient-to-r from-gray-900 to-gray-800 shadow-lg">
-        <div className="relative mx-auto max-w-6xl px-4 py-3">
+      <div
+        className="pointer-events-none fixed inset-x-0 z-40 px-3 transition-[bottom] duration-200 ease-out sm:px-4"
+        style={{
+          bottom: `calc(${bottomOffset}px + env(safe-area-inset-bottom))`,
+        }}
+      >
+        <div className="pointer-events-auto relative mx-auto max-w-6xl overflow-hidden rounded-2xl  bg-gradient-to-r from-gray-900 to-gray-800 ">
           {/* Progress bar - clickable */}
           <div
             ref={progressRef}
-            className="absolute top-0 right-0 left-0 h-1 cursor-pointer bg-gray-700/80 group"
-            onClick={handleProgressClick}
-            onTouchStart={handleTouchProgress}
+            className="group absolute inset-x-0 top-0 z-10 h-5 cursor-pointer touch-none"
+            onPointerDown={handleProgressPointerDown}
+            role="slider"
+            aria-label="Seek playback"
+            aria-valuemin={0}
+            aria-valuemax={Math.max(0, Math.round(duration))}
+            aria-valuenow={Math.round(currentTime)}
           >
-            <div
-              className="relative h-full bg-gradient-to-r from-blue-500 to-purple-500 transition group-hover:from-blue-400 group-hover:to-purple-400"
-              style={{ width: `${progressPercentage}%` }}
-            >
-              <div className="absolute top-1/2 right-0 h-3 w-3 -translate-y-1/2 rounded-full bg-white opacity-0 transition group-hover:opacity-100" />
+            <div className="absolute inset-x-4 top-3 h-1 bg-white/50">
+              <div
+                className="h-full rounded-r-full bg-gradient-to-r from-blue-500 via-sky-400 to-purple-500 transition group-hover:from-blue-400 group-hover:via-sky-300 group-hover:to-purple-400"
+                style={{ width: `${progressPercentage}%` }}
+              />
+              <div
+                className={`absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-lg transition ${
+                  isSeeking ? "scale-110" : "group-hover:scale-105"
+                }`}
+                style={{ left: `${progressPercentage}%` }}
+              />
             </div>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-gradient-to-br from-blue-500 to-purple-500">
-              {currentTrack.cover_image_url ? (
-                <AppImage
-                  src={currentTrack.cover_image_url}
-                  alt={currentTrack.title}
-                  fill
-                  sizes="48px"
-                  className="rounded-sm object-cover"
-                />
-              ) : (
-                <span className="text-white text-xs">Audio</span>
-              )}
-            </div>
+          <div className="flex items-center gap-4 px-4 pt-7 pb-2 sm:gap-4 sm:px-5">
+            {currentMixHref ? (
+              <Link
+                href={currentMixHref}
+                className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-gradient-to-br from-blue-500 to-purple-500"
+                aria-label={`Open ${currentTrack.title}`}
+              >
+                {currentTrack.cover_image_url ? (
+                  <AppImage
+                    src={currentTrack.cover_image_url}
+                    alt=""
+                    fill
+                    sizes="48px"
+                    className="rounded-sm object-cover"
+                  />
+                ) : (
+                  <span className="text-white text-xs">Audio</span>
+                )}
+              </Link>
+            ) : (
+              <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-gradient-to-br from-blue-500 to-purple-500">
+                {currentTrack.cover_image_url ? (
+                  <AppImage
+                    src={currentTrack.cover_image_url}
+                    alt=""
+                    fill
+                    sizes="48px"
+                    className="rounded-sm object-cover"
+                  />
+                ) : (
+                  <span className="text-white text-xs">Audio</span>
+                )}
+              </div>
+            )}
 
             <div className="min-w-0 flex-1">
-              <h4 className="truncate text-sm font-medium text-white">
-                {currentTrack.title}
-              </h4>
+              {currentMixHref ? (
+                <Link href={currentMixHref} className="block min-w-0">
+                  <h4 className="truncate text-sm font-medium text-white transition hover:text-white/85">
+                    {currentTrack.title}
+                  </h4>
+                </Link>
+              ) : (
+                <h4 className="truncate text-sm font-medium text-white">
+                  {currentTrack.title}
+                </h4>
+              )}
               <div className="flex items-center gap-2">
                 {currentTrack.artist ? (
-                  <p className="truncate text-xs text-gray-400">
-                    {currentTrack.artist}
-                  </p>
+                  currentMixHref ? (
+                    <Link
+                      href={currentMixHref}
+                      className="min-w-0 truncate text-xs text-gray-400 transition hover:text-gray-200"
+                    >
+                      {currentTrack.artist}
+                    </Link>
+                  ) : (
+                    <p className="truncate text-xs text-gray-400">
+                      {currentTrack.artist}
+                    </p>
+                  )
                 ) : null}
                 <p className="text-xs text-white/65 sm:hidden">
                   {formatTime(currentTime)} / {formatTime(duration)}
@@ -248,7 +375,12 @@ export default function PlayerBar() {
 
       {/* Error notification */}
       {error && (
-        <div className="fixed bottom-24 left-4 right-4 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-slide-up">
+        <div
+          className="fixed right-4 left-4 z-50 animate-slide-up rounded-lg bg-red-600 px-4 py-3 text-white shadow-lg"
+          style={{
+            bottom: `calc(${bottomOffset + 96}px + env(safe-area-inset-bottom))`,
+          }}
+        >
           <div className="flex items-center justify-between">
             <span className="text-sm">{error}</span>
             <button

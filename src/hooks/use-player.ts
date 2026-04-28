@@ -6,6 +6,7 @@ export interface PlayerTrack {
   id: string
   title: string
   drive_file_id: string
+  slug?: string | null
   cover_image_url?: string
   artist?: string | null
   album?: string | null
