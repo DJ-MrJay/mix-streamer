@@ -3,9 +3,14 @@ import { helveticaNowDisplay } from "@/app/fonts";
 import { getThemeScript } from "@/lib/theme";
 import "./globals.css";
 
+import { config } from "@fortawesome/fontawesome-svg-core";
+import "@fortawesome/fontawesome-svg-core/styles.css";
+config.autoAddCss = false;
+
 export const metadata: Metadata = {
-  title: "DJ Mr Jay - Mixes",
-  description: "DJ mix streaming platform showcasing the best of DJ Mr Jay's mixes, featuring a wide range of genres and styles. Explore my collection of expertly crafted mixes, perfect for all occasions.",
+  title: "DJ Mr Jay - Mixtapes",
+  description:
+    "DJ mix streaming platform showcasing the best of DJ Mr Jay's mixes, featuring a wide range of genres and styles. Explore my collection of expertly crafted mixes, perfect for all occasions.",
 };
 
 export default function RootLayout({
