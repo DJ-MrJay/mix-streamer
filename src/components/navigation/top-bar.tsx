@@ -230,7 +230,7 @@ export default function TopBar({
                         onSearchValueChange?.(event.target.value)
                       }
                       onKeyDown={handleSearchInputKeyDown}
-                      placeholder="Search title, artist, genre, or description"
+                      placeholder="Search title, artist, or genre"
                       className={searchInputClassName}
                       aria-label="Search mixes"
                       tabIndex={isDesktopSearchOpen ? 0 : -1}
@@ -284,7 +284,7 @@ export default function TopBar({
                         onSearchValueChange?.(event.target.value)
                       }
                       onKeyDown={handleSearchInputKeyDown}
-                      placeholder="Search title, artist, album, genre, or description"
+                      placeholder="Search title, artist, or genre"
                       className={searchInputClassName}
                       aria-label="Search mixes"
                     />
