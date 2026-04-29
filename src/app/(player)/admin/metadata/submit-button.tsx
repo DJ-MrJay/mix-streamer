@@ -4,16 +4,24 @@ import { useFormStatus } from 'react-dom'
 
 import { Button } from '@/components/ui/button'
 
-export default function SubmitButton() {
+export default function SubmitButton({
+  idleText,
+  pendingText,
+  className,
+}: {
+  idleText: string
+  pendingText: string
+  className?: string
+}) {
   const { pending } = useFormStatus()
 
   return (
     <Button
       type="submit"
       disabled={pending}
-      className="w-full sm:w-auto"
+      className={className ?? 'w-full sm:w-auto'}
     >
-      {pending ? 'Running metadata sync...' : 'Run Batch Sync'}
+      {pending ? pendingText : idleText}
     </Button>
   )
 }

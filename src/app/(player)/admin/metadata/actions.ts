@@ -2,7 +2,36 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { importNewMixesFromDriveFolder } from '@/lib/drive-folder-import'
 import { syncMixMetadataBatch } from '@/lib/mix-metadata'
+
+export type DriveImportActionState = {
+  status: 'idle' | 'success' | 'error'
+  message: string | null
+  summary: {
+    folderId: string
+    scannedFiles: number
+    supportedAudioFiles: number
+    inserted: number
+    skippedExisting: number
+    skippedUnsupported: number
+    metadataSynced: number
+    metadataFailed: number
+    publishImported: boolean
+    syncMetadata: boolean
+  } | null
+  importedMixes: Array<{
+    id: string
+    title: string
+    slug: string | null
+    metadataStatus: string | null
+  }>
+  metadataFailures: Array<{
+    mixId: string
+    title: string
+    error: string | null
+  }>
+}
 
 export type MetadataSyncActionState = {
   status: 'idle' | 'success' | 'error'
@@ -39,6 +68,90 @@ const normalizeLimit = (value: FormDataEntryValue | null) => {
 }
 
 const isChecked = (value: FormDataEntryValue | null) => value === 'on'
+const normalizeFolderId = (value: FormDataEntryValue | null) =>
+  String(value ?? '').trim() || null
+
+const getValidatedTokenError = (submittedToken: string, expectedToken: string) =>
+  !submittedToken || submittedToken !== expectedToken
+    ? 'The admin token is invalid.'
+    : null
+
+export async function runDriveFolderImportAction(
+  _previousState: DriveImportActionState,
+  formData: FormData
+): Promise<DriveImportActionState> {
+  try {
+    const expectedToken = getExpectedToken()
+    const submittedToken = String(formData.get('token') ?? '').trim()
+    const tokenError = getValidatedTokenError(submittedToken, expectedToken)
+
+    if (tokenError) {
+      return {
+        status: 'error',
+        message: tokenError,
+        summary: null,
+        importedMixes: [],
+        metadataFailures: [],
+      }
+    }
+
+    const result = await importNewMixesFromDriveFolder({
+      folderId: normalizeFolderId(formData.get('folderId')),
+      publishImported: isChecked(formData.get('publishImported')),
+      syncMetadata: isChecked(formData.get('syncMetadata')),
+    })
+
+    revalidatePath('/')
+    revalidatePath('/admin/metadata')
+
+    const insertedCount = result.insertedMixes.length
+    const metadataFailureCount = result.metadataFailed.length
+    const message = insertedCount
+      ? `Imported ${insertedCount} new mix${
+          insertedCount === 1 ? '' : 'es'
+        } from Google Drive${
+          metadataFailureCount
+            ? ` with ${metadataFailureCount} metadata sync failure${
+                metadataFailureCount === 1 ? '' : 's'
+              }.`
+            : '.'
+        }`
+      : 'No new audio mixes were found in the configured Drive folder.'
+
+    return {
+      status: 'success',
+      message,
+      summary: {
+        folderId: result.folderId,
+        scannedFiles: result.scannedFiles,
+        supportedAudioFiles: result.supportedAudioFiles,
+        inserted: insertedCount,
+        skippedExisting: result.skippedExisting,
+        skippedUnsupported: result.skippedUnsupported,
+        metadataSynced: result.metadataSynced,
+        metadataFailed: metadataFailureCount,
+        publishImported: result.publishImported,
+        syncMetadata: result.syncMetadata,
+      },
+      importedMixes: result.insertedMixes.map((mix) => ({
+        id: mix.id,
+        title: mix.title,
+        slug: mix.slug,
+        metadataStatus: mix.metadataStatus,
+      })),
+      metadataFailures: result.metadataFailed,
+    }
+  } catch (error) {
+    return {
+      status: 'error',
+      message:
+        error instanceof Error ? error.message : 'Drive import failed unexpectedly.',
+      summary: null,
+      importedMixes: [],
+      metadataFailures: [],
+    }
+  }
+}
 
 export async function runMetadataBatchSyncAction(
   _previousState: MetadataSyncActionState,
@@ -47,11 +160,12 @@ export async function runMetadataBatchSyncAction(
   try {
     const expectedToken = getExpectedToken()
     const submittedToken = String(formData.get('token') ?? '').trim()
+    const tokenError = getValidatedTokenError(submittedToken, expectedToken)
 
-    if (!submittedToken || submittedToken !== expectedToken) {
+    if (tokenError) {
       return {
         status: 'error',
-        message: 'The admin token is invalid.',
+        message: tokenError,
         summary: null,
         failures: [],
       }
