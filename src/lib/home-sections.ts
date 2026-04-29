@@ -9,10 +9,10 @@ export type HomeMixSection = {
 };
 
 const LATEST_SECTION_LIMIT = 4;
-const CURATED_SECTION_LIMIT = 4;
 const HIP_HOP_AND_RNB_SECTION_LIMIT = 4;
 const SOUL_SECTION_LIMIT = 4;
 const MIXUP_TITLE_PATTERN = /\bmixup\b/i;
+const TIMELESS_PARTY_ANTHEMS_TITLE_PATTERN = /\btimeless party anthems\b/i;
 const TITLE_YEAR_PATTERN = /\b(19|20)\d{2}\b/;
 const HIP_HOP_AND_RNB_PATTERN = /hip[\s-]?hop|rap|r&b|rnb/;
 const SOUL_PATTERN = /\bsoul\b/;
@@ -25,7 +25,7 @@ const getMixTitleYear = (title: string) => {
   return match ? Number(match[0]) : null;
 };
 
-const sortMixupMixesByYear = (mixes: MixRecord[]) =>
+const sortKenyaClubBangersByYear = (mixes: MixRecord[]) =>
   [...mixes].sort((leftMix, rightMix) => {
     const leftYear = getMixTitleYear(leftMix.title) ?? Number.NEGATIVE_INFINITY;
     const rightYear =
@@ -118,6 +118,10 @@ const getCuratedPickMixes = (mixes: MixRecord[]) => {
 const isHipHopOrRnBMix = (mix: MixRecord) =>
   HIP_HOP_AND_RNB_PATTERN.test(getGenreText(mix));
 
+const isKenyaClubBangerMix = (mix: MixRecord) =>
+  MIXUP_TITLE_PATTERN.test(mix.title) ||
+  TIMELESS_PARTY_ANTHEMS_TITLE_PATTERN.test(mix.title);
+
 const isTributeMix = (mix: MixRecord) => {
   const artist = getDisplayTrackInfo(mix).artist;
 
@@ -147,9 +151,8 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     sections,
     usedMixIds,
     id: "dj-mr-jay-picks",
-    title: "DJ Mr Jay picks",
+    title: "Top DJ Mr Jay picks",
     mixes: getCuratedPickMixes(mixes),
-    limit: CURATED_SECTION_LIMIT,
   });
 
   addSection({
@@ -157,9 +160,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "kenya-club-bangers-by-year",
     title: "Kenya club bangers by year",
-    mixes: sortMixupMixesByYear(
-      mixes.filter((mix) => MIXUP_TITLE_PATTERN.test(mix.title)),
-    ),
+    mixes: sortKenyaClubBangersByYear(mixes.filter(isKenyaClubBangerMix)),
   });
 
   addSection({
