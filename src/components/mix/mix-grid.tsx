@@ -6,6 +6,7 @@ import { useDeferredValue } from "react";
 import MixCard from "@/components/mix/mix-card";
 import { useTopBarSearch } from "@/components/navigation/top-bar-provider";
 import { TRACKLISTS } from "@/data/tracklists";
+import { getHomeMixSections } from "@/lib/home-sections";
 import { getDisplayTrackInfo } from "@/lib/mix-display";
 import type { MixRecord } from "@/types/mix";
 
@@ -47,6 +48,15 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
   const resultCountLabel = `${filteredMixes.length} mix${
     filteredMixes.length === 1 ? "" : "es"
   } found that match`;
+  const homeSections = getHomeMixSections(mixes);
+
+  const renderMixGrid = (items: MixRecord[]) => (
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+      {items.map((mix) => (
+        <MixCard key={mix.id} mix={mix} />
+      ))}
+    </div>
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6">
@@ -54,23 +64,27 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
         <p className="text-sm font-medium text-muted-foreground">
           {resultCountLabel}
         </p>
-      ) : isSearchView ? null : (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
-              Library
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              The Mix Crate
-            </h1>
-          </div>
-        </div>
-      )}
+      ) : null}
 
-      {filteredMixes.length ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-          {filteredMixes.map((mix) => (
-            <MixCard key={mix.id} mix={mix} />
+      {filteredMixes.length ? isSearchView ? (
+        renderMixGrid(filteredMixes)
+      ) : (
+        <div className="space-y-10">
+          {homeSections.map((section) => (
+            <section
+              key={section.id}
+              aria-labelledby={section.id}
+              className="space-y-4"
+            >
+              <h2
+                id={section.id}
+                className="text-2xl font-semibold tracking-tight text-foreground"
+              >
+                {section.title}
+              </h2>
+
+              {renderMixGrid(section.mixes)}
+            </section>
           ))}
         </div>
       ) : (
