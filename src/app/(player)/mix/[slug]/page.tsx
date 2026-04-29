@@ -135,7 +135,7 @@ export default async function MixPage({
 
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-end">
             <div className="grid w-full grid-cols-[1fr_auto_1fr] items-start md:block md:w-64">
-              <div className="flex justify-start pr-3 pt-1 md:hidden">
+              <div className="flex justify-start md:hidden">
                 <BackButton />
               </div>
 
