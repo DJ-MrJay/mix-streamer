@@ -2,6 +2,8 @@ import { create } from 'zustand'
 
 import type { MixGenre } from '@/types/mix'
 
+const PLAYER_SESSION_STORAGE_KEY = 'mix-streamer-player-session'
+
 export interface PlayerTrack {
   id: string
   title: string
@@ -16,6 +18,11 @@ export interface PlayerTrack {
 
 interface SetTrackOptions {
   autoplay?: boolean
+}
+
+type PersistedPlayerSession = {
+  track: PlayerTrack
+  currentTime: number
 }
 
 interface PlayerState {
@@ -36,6 +43,127 @@ interface PlayerState {
 
 export const usePlayer = create<PlayerState>((set, get) => {
   let audioCleanup: (() => void) | null = null
+  let lifecycleListenersAttached = false
+  let lastPersistedSessionSnapshot: string | null = null
+
+  const canUseBrowserStorage = () =>
+    typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+
+  const readPersistedPlayerSession = (): PersistedPlayerSession | null => {
+    if (!canUseBrowserStorage()) {
+      return null
+    }
+
+    try {
+      const rawValue = window.localStorage.getItem(PLAYER_SESSION_STORAGE_KEY)
+
+      if (!rawValue) {
+        return null
+      }
+
+      const parsedValue = JSON.parse(rawValue) as Partial<PersistedPlayerSession>
+
+      if (
+        !parsedValue ||
+        typeof parsedValue !== 'object' ||
+        !parsedValue.track ||
+        typeof parsedValue.track !== 'object' ||
+        typeof parsedValue.track.id !== 'string' ||
+        typeof parsedValue.track.title !== 'string' ||
+        typeof parsedValue.track.drive_file_id !== 'string'
+      ) {
+        return null
+      }
+
+      return {
+        track: parsedValue.track as PlayerTrack,
+        currentTime:
+          typeof parsedValue.currentTime === 'number' &&
+          Number.isFinite(parsedValue.currentTime) &&
+          parsedValue.currentTime > 0
+            ? parsedValue.currentTime
+            : 0,
+      }
+    } catch (error) {
+      console.error('Failed to read persisted player session:', error)
+      return null
+    }
+  }
+
+  const clearPersistedPlayerSession = () => {
+    if (!canUseBrowserStorage()) {
+      return
+    }
+
+    try {
+      window.localStorage.removeItem(PLAYER_SESSION_STORAGE_KEY)
+      lastPersistedSessionSnapshot = null
+    } catch (error) {
+      console.error('Failed to clear persisted player session:', error)
+    }
+  }
+
+  const persistPlayerSession = () => {
+    if (!canUseBrowserStorage()) {
+      return
+    }
+
+    const { currentTrack, currentTime, duration } = get()
+
+    if (!currentTrack) {
+      clearPersistedPlayerSession()
+      return
+    }
+
+    const safeCurrentTime = Number.isFinite(currentTime)
+      ? Math.max(0, Math.floor(currentTime))
+      : 0
+
+    if (Number.isFinite(duration) && duration > 0 && safeCurrentTime >= duration) {
+      clearPersistedPlayerSession()
+      return
+    }
+
+    try {
+      const serializedSession = JSON.stringify({
+        track: currentTrack,
+        currentTime: safeCurrentTime,
+      } satisfies PersistedPlayerSession)
+
+      if (serializedSession === lastPersistedSessionSnapshot) {
+        return
+      }
+
+      window.localStorage.setItem(
+        PLAYER_SESSION_STORAGE_KEY,
+        serializedSession
+      )
+      lastPersistedSessionSnapshot = serializedSession
+    } catch (error) {
+      console.error('Failed to persist player session:', error)
+    }
+  }
+
+  const attachLifecycleListeners = () => {
+    if (lifecycleListenersAttached || typeof window === 'undefined') {
+      return
+    }
+
+    const persistOnHidden = () => {
+      persistPlayerSession()
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        persistPlayerSession()
+      }
+    }
+
+    window.addEventListener('pagehide', persistOnHidden)
+    window.addEventListener('beforeunload', persistOnHidden)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    lifecycleListenersAttached = true
+  }
 
   const isActiveAudio = (audio: HTMLAudioElement) => get().audio === audio
 
@@ -91,13 +219,17 @@ export const usePlayer = create<PlayerState>((set, get) => {
     audio.load()
   }
 
-  const attachAudioListeners = (audio: HTMLAudioElement) => {
+  const attachAudioListeners = (
+    audio: HTMLAudioElement,
+    resumeTime = 0
+  ) => {
     const syncState = (state: Partial<PlayerState>) => {
       if (!isActiveAudio(audio)) {
         return
       }
 
       set(state)
+      persistPlayerSession()
     }
 
     const onLoadStart = () => {
@@ -105,7 +237,16 @@ export const usePlayer = create<PlayerState>((set, get) => {
     }
 
     const onLoadedMetadata = () => {
+      if (resumeTime > 0) {
+        const maxResumeTime = Number.isFinite(audio.duration)
+          ? Math.max(0, audio.duration - 1)
+          : resumeTime
+
+        audio.currentTime = Math.min(resumeTime, maxResumeTime)
+      }
+
       syncState({
+        currentTime: Number.isFinite(audio.currentTime) ? audio.currentTime : 0,
         duration: Number.isFinite(audio.duration) ? audio.duration : 0,
       })
     }
@@ -132,6 +273,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
     const onEnded = () => {
       syncState({ currentTime: 0, isLoading: false, isPlaying: false })
+      clearPersistedPlayerSession()
     }
 
     const onError = () => {
@@ -165,6 +307,13 @@ export const usePlayer = create<PlayerState>((set, get) => {
     }
   }
 
+  const createAudio = (track: PlayerTrack, resumeTime = 0) => {
+    const audio = new Audio(`/api/stream/${track.id}`)
+    audio.preload = 'metadata'
+    audioCleanup = attachAudioListeners(audio, resumeTime)
+    return audio
+  }
+
   const playAudio = async (audio: HTMLAudioElement) => {
     if (!isActiveAudio(audio)) {
       return
@@ -186,6 +335,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
       if (isActiveAudio(audio)) {
         set({ error: null, isLoading: false, isPlaying: true })
+        persistPlayerSession()
       }
     } catch (error) {
       if (!isActiveAudio(audio)) {
@@ -199,16 +349,28 @@ export const usePlayer = create<PlayerState>((set, get) => {
         isLoading: false,
         isPlaying: false,
       })
+      persistPlayerSession()
     }
   }
 
+  attachLifecycleListeners()
+
+  const persistedPlayerSession = readPersistedPlayerSession()
+  const restoredAudio = persistedPlayerSession
+    ? createAudio(persistedPlayerSession.track, persistedPlayerSession.currentTime)
+    : null
+
+  if (restoredAudio) {
+    restoredAudio.load()
+  }
+
   return {
-    currentTrack: null,
-    audio: null,
+    currentTrack: persistedPlayerSession?.track ?? null,
+    audio: restoredAudio,
     isPlaying: false,
-    currentTime: 0,
+    currentTime: persistedPlayerSession?.currentTime ?? 0,
     duration: 0,
-    isLoading: false,
+    isLoading: Boolean(restoredAudio),
     error: null,
 
     setTrack: async (track, options) => {
@@ -217,6 +379,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
       if (currentAudio && currentTrack?.id === track.id) {
         set({ currentTrack: track, error: null })
+        persistPlayerSession()
 
         if (autoplay) {
           await playAudio(currentAudio)
@@ -227,9 +390,8 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
       releaseAudio(currentAudio)
 
-      const audio = new Audio(`/api/stream/${track.id}`)
+      const audio = createAudio(track)
       audio.preload = autoplay ? 'auto' : 'metadata'
-      audioCleanup = attachAudioListeners(audio)
 
       set({
         currentTrack: track,
@@ -240,6 +402,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
         isPlaying: false,
         error: null,
       })
+      persistPlayerSession()
 
       if (autoplay) {
         await playAudio(audio)
@@ -268,6 +431,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
       audio.pause()
       set({ isLoading: false, isPlaying: false })
+      persistPlayerSession()
     },
 
     toggle: async () => {
@@ -293,6 +457,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
       audio.currentTime = nextTime
       set({ currentTime: nextTime })
+      persistPlayerSession()
     },
   }
 })

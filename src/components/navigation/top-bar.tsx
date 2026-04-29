@@ -180,6 +180,8 @@ export default function TopBar({
 
   const searchInputClassName =
     "h-10 rounded-full border-2 bg-card/75 pr-10 pl-11 text-foreground backdrop-blur-sm placeholder:text-muted-foreground focus-visible:ring-ring/0";
+  const mobileSearchExpansionClassName =
+    "relative overflow-hidden transition-[width,opacity] duration-200 ease-out data-[state=closed]:pointer-events-none data-[state=closed]:w-0 data-[state=closed]:opacity-0 data-[state=open]:w-[min(16rem,calc(100vw-12rem))] data-[state=open]:opacity-100";
 
   const themeToggleLabel =
     theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
@@ -257,6 +259,36 @@ export default function TopBar({
                   </button>
                 </div>
 
+                <div
+                  id={mobileSearchId}
+                  data-state={isMobileSearchOpen ? "open" : "closed"}
+                  aria-hidden={!isMobileSearchOpen}
+                  className={`${mobileSearchExpansionClassName} sm:hidden`}
+                >
+                  <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    ref={mobileSearchRef}
+                    value={searchValue}
+                    onChange={(event) =>
+                      onSearchValueChange?.(event.target.value)
+                    }
+                    onKeyDown={handleSearchInputKeyDown}
+                    placeholder="Search title, artist, or genre"
+                    className={searchInputClassName}
+                    aria-label="Search mixes"
+                    tabIndex={isMobileSearchOpen ? 0 : -1}
+                  />
+                  <button
+                    type="button"
+                    aria-label={searchValue ? "Clear search" : "Close search"}
+                    onClick={handleSearchDismiss}
+                    className="absolute top-1/2 right-3 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+                    tabIndex={isMobileSearchOpen ? 0 : -1}
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+
                 <button
                   type="button"
                   className="rounded-full p-2 transition-colors bg-muted/50 hover:bg-muted sm:hidden"
@@ -269,35 +301,6 @@ export default function TopBar({
                 >
                   <Search className="size-6 text-foreground" />
                 </button>
-
-                <div
-                  id={mobileSearchId}
-                  data-state={isMobileSearchOpen ? "open" : "closed"}
-                  className="absolute top-full left-1/2 mt-3 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 transition-all duration-200 ease-out data-[state=closed]:pointer-events-none data-[state=closed]:-translate-y-2 data-[state=closed]:opacity-0 data-[state=open]:translate-y-0 data-[state=open]:opacity-100 sm:hidden"
-                >
-                  <div className="relative rounded-2xl bg-background/95 backdrop-blur-xl">
-                    <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      ref={mobileSearchRef}
-                      value={searchValue}
-                      onChange={(event) =>
-                        onSearchValueChange?.(event.target.value)
-                      }
-                      onKeyDown={handleSearchInputKeyDown}
-                      placeholder="Search title, artist, or genre"
-                      className={searchInputClassName}
-                      aria-label="Search mixes"
-                    />
-                    <button
-                      type="button"
-                      aria-label={searchValue ? "Clear search" : "Close search"}
-                      onClick={handleSearchDismiss}
-                      className="absolute top-1/2 right-3 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
-                    >
-                      <X className="size-4" />
-                    </button>
-                  </div>
-                </div>
               </div>
             ) : null}
 
