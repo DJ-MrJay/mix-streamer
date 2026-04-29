@@ -129,26 +129,34 @@ export default async function MixPage({
         <div className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/75 to-background" />
 
         <div className="relative mx-auto max-w-6xl px-4 pt-8 pb-8">
-          <div className="mb-6">
+          <div className="mb-6 hidden md:block">
             <BackButton />
           </div>
 
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-end">
-            {mix.cover_image_url ? (
-              <AppImage
-                src={mix.cover_image_url}
-                alt={mix.title}
-                width={640}
-                height={640}
-                preload
-                sizes="(max-width: 768px) 100vw, 256px"
-                className="aspect-square w-full rounded-lg border border-border object-cover shadow-2xl md:w-64"
-              />
-            ) : (
-              <div className="flex aspect-square w-full items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-2xl md:w-64">
-                Cover Unavailable
+            <div className="grid w-full grid-cols-[1fr_auto_1fr] items-start md:block md:w-64">
+              <div className="flex justify-start pr-3 pt-1 md:hidden">
+                <BackButton />
               </div>
-            )}
+
+              {mix.cover_image_url ? (
+                <AppImage
+                  src={mix.cover_image_url}
+                  alt={mix.title}
+                  width={640}
+                  height={640}
+                  preload
+                  sizes="(max-width: 768px) 60vw, 256px"
+                  className="aspect-square w-[60vw] max-w-[18rem] rounded-lg border border-border object-cover shadow-2xl md:w-64"
+                />
+              ) : (
+                <div className="flex aspect-square w-[60vw] max-w-[18rem] items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-2xl md:w-64">
+                  Cover Unavailable
+                </div>
+              )}
+
+              <div aria-hidden="true" className="md:hidden" />
+            </div>
 
             <div className="flex-1">
               <p className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
