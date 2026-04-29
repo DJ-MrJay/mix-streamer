@@ -35,6 +35,7 @@ export default function TopBarProvider({
   const [searchValue, setSearchValue] = useState('')
   const [isGlobalSearchActive, setIsGlobalSearchActive] = useState(false)
   const [hasGlobalSearchQuery, setHasGlobalSearchQuery] = useState(false)
+  const searchResultsRef = useRef<HTMLElement | null>(null)
   const returnStateRef = useRef<{ pathname: string; scrollY: number } | null>(
     null
   )
@@ -125,9 +126,10 @@ export default function TopBarProvider({
         onSearchValueChange={handleSearchValueChange}
         onSearchOpen={handleSearchOpen}
         onSearchClose={closeGlobalSearch}
+        searchContentRef={searchResultsRef}
       />
       {isGlobalSearchActive ? (
-        <main className="flex-1 pb-32">
+        <main ref={searchResultsRef} className="flex-1 pb-32">
           <MixGrid mixes={searchMixes} />
         </main>
       ) : (

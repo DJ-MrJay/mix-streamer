@@ -5,6 +5,7 @@ import { useDeferredValue } from "react";
 
 import MixCard from "@/components/mix/mix-card";
 import { useTopBarSearch } from "@/components/navigation/top-bar-provider";
+import { TRACKLISTS } from "@/data/tracklists";
 import { getDisplayTrackInfo } from "@/lib/mix-display";
 import type { MixRecord } from "@/types/mix";
 
@@ -15,6 +16,7 @@ const normalizeSearchText = (value: string) =>
 
 const getSearchableText = (mix: MixRecord) => {
   const trackInfo = getDisplayTrackInfo(mix);
+  const tracklistTerms = mix.slug ? TRACKLISTS[mix.slug]?.join(" ") : undefined;
 
   return [
     mix.title,
@@ -24,6 +26,7 @@ const getSearchableText = (mix: MixRecord) => {
     mix.album,
     mix.genre?.join(" "),
     mix.description,
+    tracklistTerms,
   ]
     .filter(Boolean)
     .join(" ")
@@ -68,7 +71,7 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
             No matching files found
           </h2>
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Try a different title, artist, genre, or keyword from the mix description.
+            Try a different title, artist, track name, genre, or keyword from the mix description.
           </p>
         </div>
       )}

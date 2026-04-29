@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Play, Pause, Music, Headphones, Loader2 } from "lucide-react";
@@ -29,6 +30,10 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
   const isCurrentlyPlaying = isCurrentTrack && isPlaying;
   const isCurrentlyLoading = isCurrentTrack && isLoading;
   const trackInfo = getDisplayTrackInfo(mix);
+  const detailHref = mix.slug ? `/mix/${mix.slug}` : null;
+  const playButtonLabel = isCurrentlyPlaying
+    ? `Pause ${trackInfo.title}`
+    : `Play ${trackInfo.title}`;
 
   const getGradientStyle = (id: string) => {
     const hash = id
@@ -42,6 +47,7 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
   };
 
   const handlePlayClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     e.stopPropagation();
 
     if (isCurrentTrack && isPlaying) {
@@ -67,11 +73,11 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
   };
 
   const handleCardClick = () => {
-    if (!mix.slug) {
+    if (!detailHref) {
       return;
     }
 
-    router.push(`/mix/${mix.slug}`);
+    router.push(detailHref);
   };
 
   const formatDuration = (seconds?: number | null) => {
@@ -126,7 +132,9 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
 
         {/* Play button */}
         <button
+          aria-label={playButtonLabel}
           onClick={handlePlayClick}
+          onPointerDown={(event) => event.stopPropagation()}
           type="button"
           className="absolute inset-0 flex items-center justify-center opacity-100 transition-all duration-300 md:opacity-0 md:group-hover:opacity-100"
         >
@@ -175,11 +183,19 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
 
       {/* Info */}
       <div className="p-3 md:p-4">
-        <h3
-          className="mb-1 text-base font-semibold text-foreground"
-          title={trackInfo.title}
-        >
-          {trackInfo.title}
+        <h3 className="mb-1 text-base font-semibold text-foreground">
+          {detailHref ? (
+            <Link
+              href={detailHref}
+              onClick={(event) => event.stopPropagation()}
+              className="transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              title={trackInfo.title}
+            >
+              {trackInfo.title}
+            </Link>
+          ) : (
+            <span title={trackInfo.title}>{trackInfo.title}</span>
+          )}
         </h3>
 
         {trackInfo.artist && (

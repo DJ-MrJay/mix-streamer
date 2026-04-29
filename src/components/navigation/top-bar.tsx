@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type RefObject } from "react";
 import { Moon, Search, SunMedium, X } from "lucide-react";
 
 import AppImage from "@/components/ui/app-image";
@@ -19,6 +19,7 @@ type TopBarProps = {
   onSearchValueChange?: (value: string) => void;
   onSearchOpen?: () => void;
   onSearchClose?: () => void;
+  searchContentRef?: RefObject<HTMLElement | null>;
 };
 
 export default function TopBar({
@@ -26,6 +27,7 @@ export default function TopBar({
   onSearchValueChange,
   onSearchOpen,
   onSearchClose,
+  searchContentRef,
 }: TopBarProps) {
   const searchEnabled = typeof onSearchValueChange === "function";
   const [theme, setTheme] = useState<AppTheme>("dark");
@@ -93,6 +95,10 @@ export default function TopBar({
         return;
       }
 
+      if (searchContentRef?.current?.contains(event.target)) {
+        return;
+      }
+
       window.setTimeout(() => {
         clearAndCloseSearch();
       }, 0);
@@ -104,6 +110,7 @@ export default function TopBar({
     clearAndCloseSearch,
     isDesktopSearchOpen,
     isMobileSearchOpen,
+    searchContentRef,
     searchEnabled,
     searchValue,
   ]);
