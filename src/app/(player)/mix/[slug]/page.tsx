@@ -1,12 +1,78 @@
-import { getSupabase } from "@/lib/supabase";
+import type { Metadata } from "next";
 import { getDisplayTrackInfo } from "@/lib/mix-display";
 import { TRACKLISTS } from "@/data/tracklists";
-import type { MixRecord } from "@/types/mix";
+import { getMixBySlug } from "@/lib/mixes";
+import { toAbsoluteUrl } from "@/lib/site-url";
 import PlayButton from "@/components/mix/play-button";
 import ShareButton from "@/components/mix/share-button";
 import AppImage from "@/components/ui/app-image";
 import BackButton from "@/components/navigation/back-button";
 import { Download } from "lucide-react";
+
+const getMixPageDescription = (
+  title: string,
+  description: string | null,
+  artist: string | null
+) =>
+  description?.trim() ||
+  `Listen to ${title}${artist ? ` by ${artist}` : ""} on DJ Mr Jay Mixtapes.`;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const mix = await getMixBySlug(slug);
+
+  if (!mix) {
+    return {
+      title: "Mix not found | DJ Mr Jay - Mixtapes",
+      description: "This mix could not be found on DJ Mr Jay Mixtapes.",
+    };
+  }
+
+  const trackInfo = getDisplayTrackInfo(mix);
+  const title = `${trackInfo.title} | DJ Mr Jay - Mixtapes`;
+  const description = getMixPageDescription(
+    trackInfo.title,
+    mix.description,
+    trackInfo.artist
+  );
+  const pagePath = `/mix/${mix.slug ?? slug}`;
+  const absolutePageUrl = toAbsoluteUrl(pagePath);
+  const absoluteImageUrl = mix.cover_image_url
+    ? toAbsoluteUrl(mix.cover_image_url)
+    : undefined;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: pagePath,
+    },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: absolutePageUrl,
+      images: absoluteImageUrl
+        ? [
+            {
+              url: absoluteImageUrl,
+              alt: trackInfo.title,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: absoluteImageUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: absoluteImageUrl ? [absoluteImageUrl] : undefined,
+    },
+  };
+}
 
 export default async function MixPage({
   params,
@@ -14,15 +80,7 @@ export default async function MixPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const supabase = getSupabase();
-
-  const { data } = await supabase
-    .from("mixes")
-    .select("*")
-    .eq("slug", slug)
-    .single();
-
-  const mix = data as MixRecord | null;
+  const mix = await getMixBySlug(slug);
 
   if (!mix) {
     return <div className="p-6 text-foreground">Mix not found</div>;
