@@ -3,9 +3,11 @@ import 'server-only'
 import { parseStream, selectCover } from 'music-metadata'
 
 import {
+  type AudioFileDetails,
   getAudioFileDetailsByDriveFileId,
   getDriveFileStream,
 } from '@/lib/audio-files'
+import { sortMixesByRecency } from '@/lib/mix-sort'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { MixMetadataStatus, MixRecord } from '@/types/mix'
 
@@ -21,6 +23,7 @@ type ExtractedMixMetadata = {
   bitrate: number | null
   format: string | null
   coverImageUrl: string | null
+  driveModifiedAt: string | null
 }
 
 type SupabaseMutationResult = {
@@ -177,9 +180,10 @@ const uploadCoverArt = async ({
   return data.publicUrl
 }
 
-const extractMixMetadata = async (mix: MixRecord): Promise<ExtractedMixMetadata> => {
-  const fileDetails = await getAudioFileDetailsByDriveFileId(mix.drive_file_id)
-
+const extractMixMetadata = async (
+  mix: MixRecord,
+  fileDetails: AudioFileDetails
+): Promise<ExtractedMixMetadata> => {
   if (fileDetails.fileSize <= 0) {
     throw new Error('Audio file is empty or unavailable.')
   }
@@ -217,6 +221,7 @@ const extractMixMetadata = async (mix: MixRecord): Promise<ExtractedMixMetadata>
       bitrate: normalizeInteger(metadata.format.bitrate),
       format: getFormatName(metadata.format.container ?? metadata.format.codec),
       coverImageUrl,
+      driveModifiedAt: fileDetails.driveModifiedAt,
     }
   } finally {
     audioStream.destroy()
@@ -234,6 +239,7 @@ const buildMixUpdate = (mix: MixRecord, extractedMetadata: ExtractedMixMetadata)
     duration: extractedMetadata.duration ?? mix.duration ?? null,
     bitrate: extractedMetadata.bitrate ?? mix.bitrate ?? null,
     format: extractedMetadata.format ?? mix.format ?? null,
+    drive_modified_at: extractedMetadata.driveModifiedAt ?? mix.drive_modified_at ?? null,
     metadata_status: 'succeeded' as const,
     metadata_extracted_at: new Date().toISOString(),
     metadata_error: null,
@@ -244,6 +250,7 @@ export const syncMixMetadata = async (
   mix: MixRecord
 ): Promise<MixMetadataSyncResult> => {
   const mixesTable = getMixesTable()
+  let driveModifiedAt = mix.drive_modified_at
 
   const processingResult = await mixesTable
     .update({
@@ -257,7 +264,10 @@ export const syncMixMetadata = async (
   }
 
   try {
-    const extractedMetadata = await extractMixMetadata(mix)
+    const fileDetails = await getAudioFileDetailsByDriveFileId(mix.drive_file_id)
+    driveModifiedAt = fileDetails.driveModifiedAt ?? driveModifiedAt
+
+    const extractedMetadata = await extractMixMetadata(mix, fileDetails)
     const updatePayload = buildMixUpdate(mix, extractedMetadata)
 
     const { data: updatedMix, error } = await mixesTable
@@ -283,6 +293,7 @@ export const syncMixMetadata = async (
       .update({
         metadata_status: 'failed',
         metadata_error: errorMessage,
+        drive_modified_at: driveModifiedAt ?? null,
       })
       .eq('id', mix.id)
 
@@ -324,13 +335,9 @@ export const syncMixMetadataBatch = async ({
   }
 
   const results: MixMetadataSyncResult[] = []
-  const mixesToSync = (mixes ?? [])
-    .filter((mix) => (publishedOnly ? mix.published === true : true))
-    .sort((leftMix, rightMix) => {
-      const leftTime = leftMix.created_at ? Date.parse(leftMix.created_at) : 0
-      const rightTime = rightMix.created_at ? Date.parse(rightMix.created_at) : 0
-      return rightTime - leftTime
-    })
+  const mixesToSync = sortMixesByRecency(
+    (mixes ?? []).filter((mix) => (publishedOnly ? mix.published === true : true))
+  )
     .slice(0, limit)
 
   for (const mix of mixesToSync) {

@@ -16,6 +16,7 @@ export interface MixRecord {
   slug: string | null
   published: boolean | null
   created_at: string | null
+  drive_modified_at: string | null
   artist: string | null
   album: string | null
   genre: MixGenre | null

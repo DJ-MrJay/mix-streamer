@@ -1,0 +1,20 @@
+
+> mix-streamer@0.1.0 dev D:\mix-streamer
+> next dev
+
+⚠ Port 3000 is in use by an unknown process, using available port 3001 instead.
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.100.17:3001
+- Environments: .env.local
+✓ Ready in 1572ms
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          10600
+- Dir:          D:\mix-streamer
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 10600 /F to stop it.
+[?25h
+ ELIFECYCLE  Command failed with exit code 1.

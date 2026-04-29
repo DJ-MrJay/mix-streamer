@@ -9,6 +9,7 @@ export type AudioFileDetails = {
   fileName: string
   fileSize: number
   contentType: string
+  driveModifiedAt: string | null
 }
 
 export const getContentType = (fileName: string, mimeType: string) => {
@@ -52,7 +53,7 @@ export const getAudioFileDetailsByDriveFileId = async (
   const drive = getDrive()
   const fileMetadata = await drive.files.get({
     fileId: driveFileId,
-    fields: 'size, mimeType, name',
+    fields: 'size, mimeType, name, modifiedTime',
   })
 
   return {
@@ -63,6 +64,7 @@ export const getAudioFileDetailsByDriveFileId = async (
       fileMetadata.data.name || '',
       fileMetadata.data.mimeType || ''
     ),
+    driveModifiedAt: fileMetadata.data.modifiedTime || null,
   }
 }
 

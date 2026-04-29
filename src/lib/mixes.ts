@@ -1,5 +1,6 @@
 import type { MixRecord } from '@/types/mix'
 
+import { sortMixesByRecency } from './mix-sort'
 import { getSupabase } from './supabase'
 
 export async function getMixes(): Promise<MixRecord[]> {
@@ -8,12 +9,11 @@ export async function getMixes(): Promise<MixRecord[]> {
     .from('mixes')
     .select('*')
     .eq('published', true)
-    .order('created_at', { ascending: false })
 
   if (error) {
     console.error('Error fetching mixes:', error)
     return []
   }
 
-  return (data ?? []) as MixRecord[]
+  return sortMixesByRecency((data ?? []) as MixRecord[])
 }
