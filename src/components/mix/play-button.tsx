@@ -15,6 +15,7 @@ export default function PlayButton({ mix }: { mix: PlayerTrack }) {
 
   const isCurrent = currentTrack?.id === mix.id
   const isCurrentLoading = isCurrent && isLoading
+  const buttonLabel = isCurrent && isPlaying ? 'Pause mix' : 'Play mix'
 
   const handleClick = async () => {
     if (isCurrent && isPlaying) {
@@ -30,16 +31,17 @@ export default function PlayButton({ mix }: { mix: PlayerTrack }) {
     <button
       onClick={handleClick}
       type="button"
-      className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+      aria-label={buttonLabel}
+      className="inline-flex items-center gap-2 rounded-full bg-primary px-3 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:px-6"
     >
       {isCurrentLoading ? (
-        <Loader2 className="animate-spin" />
+        <Loader2 className="size-5 animate-spin" />
       ) : isCurrent && isPlaying ? (
-        <Pause />
+        <Pause className="size-5" />
       ) : (
-        <Play />
+        <Play className="size-5" />
       )}
-      Play
+      <span className="hidden sm:inline">Play</span>
     </button>
   )
 }

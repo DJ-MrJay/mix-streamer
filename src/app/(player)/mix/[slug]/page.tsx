@@ -3,6 +3,7 @@ import { getDisplayTrackInfo } from "@/lib/mix-display";
 import { TRACKLISTS } from "@/data/tracklists";
 import type { MixRecord } from "@/types/mix";
 import PlayButton from "@/components/mix/play-button";
+import ShareButton from "@/components/mix/share-button";
 import AppImage from "@/components/ui/app-image";
 import BackButton from "@/components/navigation/back-button";
 import { Download } from "lucide-react";
@@ -136,11 +137,13 @@ export default async function MixPage({
                 <a
                   href={`/api/stream/${mix.id}?download=1`}
                   download
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-6 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition hover:bg-muted"
+                  aria-label={`Download ${trackInfo.title}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-3 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition hover:bg-muted sm:px-6"
                 >
                   <Download className="size-5" />
-                  Download
+                  <span className="hidden sm:inline">Download</span>
                 </a>
+                <ShareButton title={trackInfo.title} />
               </div>
             </div>
           </div>
