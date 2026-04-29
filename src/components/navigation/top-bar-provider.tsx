@@ -10,6 +10,7 @@ import type { MixRecord } from '@/types/mix'
 type TopBarSearchContextValue = {
   searchValue: string
   setSearchValue: (value: string) => void
+  isSearchActive: boolean
 }
 
 const TopBarSearchContext = createContext<TopBarSearchContextValue | null>(null)
@@ -34,7 +35,6 @@ export default function TopBarProvider({
   const pathname = usePathname()
   const [searchValue, setSearchValue] = useState('')
   const [isGlobalSearchActive, setIsGlobalSearchActive] = useState(false)
-  const [hasGlobalSearchQuery, setHasGlobalSearchQuery] = useState(false)
   const searchResultsRef = useRef<HTMLElement | null>(null)
   const returnStateRef = useRef<{ pathname: string; scrollY: number } | null>(
     null
@@ -60,7 +60,6 @@ export default function TopBarProvider({
 
   const closeGlobalSearch = useCallback(() => {
     setIsGlobalSearchActive(false)
-    setHasGlobalSearchQuery(false)
     restoreScroll()
   }, [restoreScroll])
 
@@ -74,32 +73,15 @@ export default function TopBarProvider({
       scrollY: window.scrollY,
     }
     setIsGlobalSearchActive(true)
-    setHasGlobalSearchQuery(false)
 
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0 })
     })
   }, [isGlobalSearchActive, pathname])
 
-  const handleSearchValueChange = useCallback(
-    (value: string) => {
-      setSearchValue(value)
-
-      if (!isGlobalSearchActive) {
-        return
-      }
-
-      if (value.trim()) {
-        setHasGlobalSearchQuery(true)
-        return
-      }
-
-      if (hasGlobalSearchQuery) {
-        closeGlobalSearch()
-      }
-    },
-    [closeGlobalSearch, hasGlobalSearchQuery, isGlobalSearchActive]
-  )
+  const handleSearchValueChange = useCallback((value: string) => {
+    setSearchValue(value)
+  }, [])
 
   useEffect(() => {
     if (!isGlobalSearchActive) {
@@ -110,7 +92,6 @@ export default function TopBarProvider({
       window.requestAnimationFrame(() => {
         returnStateRef.current = null
         setIsGlobalSearchActive(false)
-        setHasGlobalSearchQuery(false)
         setSearchValue('')
       })
     }
@@ -118,7 +99,11 @@ export default function TopBarProvider({
 
   return (
     <TopBarSearchContext.Provider
-      value={{ searchValue, setSearchValue: handleSearchValueChange }}
+      value={{
+        searchValue,
+        setSearchValue: handleSearchValueChange,
+        isSearchActive: isGlobalSearchActive,
+      }}
     >
       <TopBar
         key={pathname}

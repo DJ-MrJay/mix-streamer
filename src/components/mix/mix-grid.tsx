@@ -35,26 +35,37 @@ const getSearchableText = (mix: MixRecord) => {
 };
 
 export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
-  const { searchValue } = useTopBarSearch();
+  const { searchValue, isSearchActive } = useTopBarSearch();
   const deferredSearchValue = useDeferredValue(searchValue);
   const normalizedQuery = normalizeSearchText(deferredSearchValue);
+  const isSearchResultsView = Boolean(normalizedQuery);
+  const isSearchView = isSearchActive || isSearchResultsView;
 
   const filteredMixes = normalizedQuery
     ? mixes.filter((mix) => getSearchableText(mix).includes(normalizedQuery))
     : mixes;
+  const resultCountLabel = `${filteredMixes.length} mix${
+    filteredMixes.length === 1 ? "" : "es"
+  } found that match`;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
-            Library
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            The Mix Crate
-          </h1>
+      {isSearchResultsView ? (
+        <p className="text-sm font-medium text-muted-foreground">
+          {resultCountLabel}
+        </p>
+      ) : isSearchView ? null : (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
+              Library
+            </p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              The Mix Crate
+            </h1>
+          </div>
         </div>
-      </div>
+      )}
 
       {filteredMixes.length ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
@@ -68,7 +79,7 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
             <SearchX className="size-6" />
           </div>
           <h2 className="text-lg font-semibold text-foreground">
-            No matching files found
+            No mixes found
           </h2>
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
             Try a different title, artist, track name, genre, or keyword from the mix description.

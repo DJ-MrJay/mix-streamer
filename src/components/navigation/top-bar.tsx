@@ -78,6 +78,30 @@ export default function TopBar({
     mobileSearchRef.current?.blur();
   }, [onSearchClose, onSearchValueChange]);
 
+  const clearSearch = useCallback(() => {
+    onSearchValueChange?.("");
+
+    window.requestAnimationFrame(() => {
+      if (isDesktopSearchOpen) {
+        desktopSearchRef.current?.focus();
+        return;
+      }
+
+      if (isMobileSearchOpen) {
+        mobileSearchRef.current?.focus();
+      }
+    });
+  }, [isDesktopSearchOpen, isMobileSearchOpen, onSearchValueChange]);
+
+  const handleSearchDismiss = useCallback(() => {
+    if (searchValue) {
+      clearSearch();
+      return;
+    }
+
+    clearAndCloseSearch();
+  }, [clearAndCloseSearch, clearSearch, searchValue]);
+
   useEffect(() => {
     if (
       !searchEnabled ||
@@ -213,10 +237,8 @@ export default function TopBar({
                     />
                     <button
                       type="button"
-                      aria-label={
-                        searchValue ? "Clear search and close" : "Close search"
-                      }
-                      onClick={clearAndCloseSearch}
+                      aria-label={searchValue ? "Clear search" : "Close search"}
+                      onClick={handleSearchDismiss}
                       className="absolute top-1/2 right-3 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
                       tabIndex={isDesktopSearchOpen ? 0 : -1}
                     >
@@ -268,10 +290,8 @@ export default function TopBar({
                     />
                     <button
                       type="button"
-                      aria-label={
-                        searchValue ? "Clear search and close" : "Close search"
-                      }
-                      onClick={clearAndCloseSearch}
+                      aria-label={searchValue ? "Clear search" : "Close search"}
+                      onClick={handleSearchDismiss}
                       className="absolute top-1/2 right-3 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
                     >
                       <X className="size-4" />
