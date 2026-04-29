@@ -121,12 +121,12 @@ export default async function MixPage({
               alt=""
               fill
               sizes="100vw"
-              className="scale-110 object-cover opacity-30 blur-3xl"
+              className="scale-110 object-cover opacity-30"
             />
           </div>
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/75 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/85 to-background" />
 
         <div className="relative mx-auto max-w-6xl px-4 pt-8 pb-8">
           <div className="mb-6 hidden md:block">
