@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Play, Pause, Music, Headphones, Loader2 } from "lucide-react";
 
+import { useRouteLoading } from "@/components/navigation/route-loading-provider";
 import { usePlayer } from "@/hooks/use-player";
 import { getDisplayTrackInfo } from "@/lib/mix-display";
 import type { MixRecord } from "@/types/mix";
@@ -18,6 +19,7 @@ export default function MixCard({
   disableHoverRing?: boolean;
 }) {
   const router = useRouter();
+  const { startRouteLoading } = useRouteLoading();
 
   const {
     currentTrack,
@@ -81,6 +83,7 @@ export default function MixCard({
       return;
     }
 
+    startRouteLoading();
     router.push(detailHref);
   };
 
@@ -188,7 +191,10 @@ export default function MixCard({
           {detailHref ? (
             <Link
               href={detailHref}
-              onClick={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                startRouteLoading();
+              }}
               className="transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={trackInfo.title}
             >

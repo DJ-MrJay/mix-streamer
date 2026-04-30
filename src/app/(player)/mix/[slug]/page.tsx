@@ -9,6 +9,8 @@ import AppImage from "@/components/ui/app-image";
 import BackButton from "@/components/navigation/back-button";
 import { Download } from "lucide-react";
 
+const defaultShareImage = toAbsoluteUrl("/android-chrome-512x512.png");
+
 const getMixPageDescription = (
   title: string,
   description: string | null,
@@ -43,7 +45,7 @@ export async function generateMetadata({
   const absolutePageUrl = toAbsoluteUrl(pagePath);
   const absoluteImageUrl = mix.cover_image_url
     ? toAbsoluteUrl(mix.cover_image_url)
-    : undefined;
+    : defaultShareImage;
 
   return {
     title,
@@ -56,20 +58,18 @@ export async function generateMetadata({
       description,
       type: "website",
       url: absolutePageUrl,
-      images: absoluteImageUrl
-        ? [
-            {
-              url: absoluteImageUrl,
-              alt: trackInfo.title,
-            },
-          ]
-        : undefined,
+      images: [
+        {
+          url: absoluteImageUrl,
+          alt: trackInfo.title,
+        },
+      ],
     },
     twitter: {
       card: absoluteImageUrl ? "summary_large_image" : "summary",
       title,
       description,
-      images: absoluteImageUrl ? [absoluteImageUrl] : undefined,
+      images: [absoluteImageUrl],
     },
   };
 }
