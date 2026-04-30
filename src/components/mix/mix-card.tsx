@@ -26,8 +26,6 @@ export default function MixCard({
     pause,
     isPlaying,
     isLoading,
-    currentTime,
-    duration: playerDuration,
   } = usePlayer();
 
   const [imageError, setImageError] = useState(false);
@@ -99,9 +97,6 @@ export default function MixCard({
   };
 
   const duration = formatDuration(mix.duration);
-  const progressPercentage = isCurrentTrack
-    ? (currentTime / playerDuration) * 100 || 0
-    : 0;
 
   return (
     <div
@@ -208,21 +203,6 @@ export default function MixCard({
           <p className="truncate text-sm text-muted-foreground">
             {trackInfo.artist}
           </p>
-        )}
-
-        {/* Progress bar */}
-        {isCurrentTrack && (
-          <div className="mt-3">
-            <div
-              aria-hidden="true"
-              className="h-1.5 overflow-hidden rounded-full bg-muted"
-            >
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-400 to-purple-500 transition-all duration-300"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-          </div>
         )}
       </div>
     </div>
