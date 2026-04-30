@@ -151,7 +151,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     sections,
     usedMixIds,
     id: "dj-mr-jay-picks",
-    title: "Top DJ Mr Jay picks",
+    title: "Top DJ Mr. Jay picks",
     mixes: getCuratedPickMixes(mixes),
   });
 
@@ -176,7 +176,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     sections,
     usedMixIds,
     id: "tributes",
-    title: "Tributes",
+    title: "Tribute mixes",
     mixes: mixes.filter(isTributeMix),
   });
 
@@ -193,7 +193,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     sections,
     usedMixIds,
     id: "more-from-the-crate",
-    title: "More from the crate",
+    title: "More from the DJ crate",
     mixes,
   });
 
