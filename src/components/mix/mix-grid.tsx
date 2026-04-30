@@ -4,6 +4,7 @@ import { SearchX } from "lucide-react";
 import { useDeferredValue } from "react";
 
 import MixCard from "@/components/mix/mix-card";
+import MixCardPlaceholder from "@/components/mix/mix-card-placeholder";
 import { useTopBarSearch } from "@/components/navigation/top-bar-provider";
 import { TRACKLISTS } from "@/data/tracklists";
 import { getHomeMixSections } from "@/lib/home-sections";
@@ -14,6 +15,9 @@ const collapseWhitespace = (value: string) => value.replace(/\s+/g, " ").trim();
 
 const normalizeSearchText = (value: string) =>
   collapseWhitespace(value).toLowerCase();
+
+const getPlaceholderCount = (itemCount: number, columns: number) =>
+  (columns - (itemCount % columns)) % columns;
 
 const getSearchableText = (mix: MixRecord) => {
   const trackInfo = getDisplayTrackInfo(mix);
@@ -58,6 +62,48 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
     </div>
   );
 
+  const renderBalancedHomeGrid = (
+    items: MixRecord[],
+    options?: {
+      className?: string;
+      disableHoverRing?: boolean;
+    },
+  ) => {
+    const tabletPlaceholderCount = getPlaceholderCount(items.length, 3);
+    const desktopPlaceholderCount = getPlaceholderCount(items.length, 4);
+
+    return (
+      <div
+        className={
+          options?.className ??
+          "grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4"
+        }
+      >
+        {items.map((mix) => (
+          <MixCard
+            key={mix.id}
+            mix={mix}
+            disableHoverRing={options?.disableHoverRing}
+          />
+        ))}
+
+        {Array.from({ length: tabletPlaceholderCount }, (_, index) => (
+          <MixCardPlaceholder
+            key={`tablet-placeholder-${items.length}-${index}`}
+            className="hidden sm:block xl:hidden"
+          />
+        ))}
+
+        {Array.from({ length: desktopPlaceholderCount }, (_, index) => (
+          <MixCardPlaceholder
+            key={`desktop-placeholder-${items.length}-${index}`}
+            className="hidden xl:block"
+          />
+        ))}
+      </div>
+    );
+  };
+
   const renderSectionMixes = (
     items: MixRecord[],
     mobileLayout: "grid" | "carousel" = "grid",
@@ -65,7 +111,7 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
     const disableHoverRing = mobileLayout === "carousel";
 
     if (mobileLayout !== "carousel") {
-      return renderMixGrid(items);
+      return renderBalancedHomeGrid(items);
     }
 
     return (
@@ -80,15 +126,10 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
             </div>
           ))}
         </div>
-        <div className="hidden sm:grid sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
-          {items.map((mix) => (
-            <MixCard
-              key={mix.id}
-              mix={mix}
-              disableHoverRing={disableHoverRing}
-            />
-          ))}
-        </div>
+        {renderBalancedHomeGrid(items, {
+          className: "hidden sm:grid sm:grid-cols-3 sm:gap-4 xl:grid-cols-4",
+          disableHoverRing,
+        })}
       </>
     );
   };
