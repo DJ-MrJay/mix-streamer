@@ -116,7 +116,7 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
 
     return (
       <>
-        <div className="mx-[-1rem] flex gap-4 overflow-x-auto px-4 [scrollbar-width:none] [-ms-overflow-style:none] sm:hidden [&::-webkit-scrollbar]:hidden">
+        <div className="mx-[-1rem] flex gap-4 overflow-x-auto px-4 py-2 [scrollbar-width:none] [-ms-overflow-style:none] sm:hidden [&::-webkit-scrollbar]:hidden">
           {items.map((mix) => (
             <div
               key={mix.id}
