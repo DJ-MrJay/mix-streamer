@@ -17,7 +17,7 @@ const getMixPageDescription = (
   artist: string | null
 ) =>
   description?.trim() ||
-  `Listen to ${title}${artist ? ` by ${artist}` : ""} on DJ Mr Jay Mixtapes.`;
+  `Listen to ${title}${artist ? ` by ${artist}` : ""} on DJ Mr. Jay Mixtapes.`;
 
 export async function generateMetadata({
   params,
@@ -29,13 +29,13 @@ export async function generateMetadata({
 
   if (!mix) {
     return {
-      title: "Mix not found | DJ Mr Jay Mixtapes",
-      description: "This mix could not be found on DJ Mr Jay Mixtapes.",
+      title: "Mix not found | DJ Mr. Jay Mixtapes",
+      description: "This mix could not be found on DJ Mr. Jay Mixtapes.",
     };
   }
 
   const trackInfo = getDisplayTrackInfo(mix);
-  const title = `${trackInfo.title} | DJ Mr Jay Mixtapes`;
+  const title = `${trackInfo.title} | DJ Mr. Jay Mixtapes`;
   const description = getMixPageDescription(
     trackInfo.title,
     mix.description,

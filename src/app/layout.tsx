@@ -13,28 +13,28 @@ const defaultShareImage = toAbsoluteUrl("/android-chrome-512x512.png");
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
-  title: "DJ Mr Jay Mixtapes",
+  title: "DJ Mr. Jay Mixtapes",
   description:
     "DJ mix streaming platform showcasing the best of DJ Mr Jay's mixes, featuring a wide range of genres and styles. Explore my collection of expertly crafted mixes, perfect for all occasions.",
   openGraph: {
-    title: "DJ Mr Jay Mixtapes",
+    title: "DJ Mr. Jay Mixtapes",
     description:
       "DJ mix streaming platform showcasing the best of DJ Mr Jay's mixes, featuring a wide range of genres and styles. Explore my collection of expertly crafted mixes, perfect for all occasions.",
     type: "website",
     url: "/",
-    siteName: "DJ Mr Jay Mixtapes",
+    siteName: "DJ Mr. Jay Mixtapes",
     images: [
       {
         url: defaultShareImage,
         width: 512,
         height: 512,
-        alt: "DJ Mr Jay Mixtapes",
+        alt: "DJ Mr. Jay Mixtapes",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "DJ Mr Jay Mixtapes",
+    title: "DJ Mr. Jay Mixtapes",
     description:
       "DJ mix streaming platform showcasing the best of DJ Mr Jay's mixes, featuring a wide range of genres and styles. Explore my collection of expertly crafted mixes, perfect for all occasions.",
     images: [defaultShareImage],

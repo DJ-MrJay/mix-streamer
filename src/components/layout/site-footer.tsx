@@ -62,10 +62,10 @@ export default function SiteFooter() {
           ))}
         </div>
 
-        <p className="text-xs">&copy; {year} DJ Mr. Jay Mixtapes</p>
+        <p className="text-xs">&copy; {year} DJ Mr. Jay Mixtapes. All rights reserved.</p>
 
         <p className="text-xs">
-          Carefully Curated by{" "}
+          Developed and Carefully Curated by{" "}
           <a
             href="https://jonah-profolio.vercel.app/"
             target="_blank"
