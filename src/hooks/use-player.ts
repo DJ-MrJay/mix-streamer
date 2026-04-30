@@ -28,6 +28,7 @@ type PersistedPlayerSession = {
 interface PlayerState {
   currentTrack: PlayerTrack | null
   audio: HTMLAudioElement | null
+  isPlayerBarVisible: boolean
   isPlaying: boolean
   currentTime: number
   duration: number
@@ -39,6 +40,7 @@ interface PlayerState {
   seek: (time: number) => void
   play: () => Promise<void>
   pause: () => void
+  hidePlayerBar: () => void
 }
 
 export const usePlayer = create<PlayerState>((set, get) => {
@@ -320,7 +322,12 @@ export const usePlayer = create<PlayerState>((set, get) => {
     }
 
     if (!audio.paused) {
-      set({ error: null, isLoading: false, isPlaying: true })
+      set({
+        error: null,
+        isLoading: false,
+        isPlaying: true,
+        isPlayerBarVisible: true,
+      })
       return
     }
 
@@ -334,7 +341,12 @@ export const usePlayer = create<PlayerState>((set, get) => {
       await audio.play()
 
       if (isActiveAudio(audio)) {
-        set({ error: null, isLoading: false, isPlaying: true })
+        set({
+          error: null,
+          isLoading: false,
+          isPlaying: true,
+          isPlayerBarVisible: true,
+        })
         persistPlayerSession()
       }
     } catch (error) {
@@ -348,6 +360,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
         error: errorMessage,
         isLoading: false,
         isPlaying: false,
+        isPlayerBarVisible: true,
       })
       persistPlayerSession()
     }
@@ -367,6 +380,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
   return {
     currentTrack: persistedPlayerSession?.track ?? null,
     audio: restoredAudio,
+    isPlayerBarVisible: false,
     isPlaying: false,
     currentTime: persistedPlayerSession?.currentTime ?? 0,
     duration: 0,
@@ -396,6 +410,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
       set({
         currentTrack: track,
         audio,
+        isPlayerBarVisible: true,
         currentTime: 0,
         duration: 0,
         isLoading: true,
@@ -458,6 +473,14 @@ export const usePlayer = create<PlayerState>((set, get) => {
       audio.currentTime = nextTime
       set({ currentTime: nextTime })
       persistPlayerSession()
+    },
+
+    hidePlayerBar: () => {
+      if (get().isPlaying) {
+        return
+      }
+
+      set({ isPlayerBarVisible: false })
     },
   }
 })

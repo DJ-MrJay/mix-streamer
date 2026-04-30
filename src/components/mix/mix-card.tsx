@@ -10,7 +10,13 @@ import { getDisplayTrackInfo } from "@/lib/mix-display";
 import type { MixRecord } from "@/types/mix";
 import AppImage from "@/components/ui/app-image";
 
-export default function MixCard({ mix }: { mix: MixRecord }) {
+export default function MixCard({
+  mix,
+  disableHoverRing = false,
+}: {
+  mix: MixRecord;
+  disableHoverRing?: boolean;
+}) {
   const router = useRouter();
 
   const {
@@ -100,9 +106,9 @@ export default function MixCard({ mix }: { mix: MixRecord }) {
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative cursor-pointer overflow-hidden rounded-sm bg-card text-card-foreground transition-all duration-800 hover:ring-6 hover:ring-muted  ${
-        isCurrentTrack ? "border-primary/30 ring-2 ring-primary/30" : ""
-      }`}
+      className={`group relative cursor-pointer overflow-hidden rounded-sm bg-card text-card-foreground transition-all duration-800 ${
+        disableHoverRing ? "" : "hover:ring-6 hover:ring-muted"
+      } ${isCurrentTrack ? "border-primary/30 ring-2 ring-primary/30" : ""}`}
     >
       {/* Album Art */}
       <div className="relative aspect-square overflow-hidden bg-muted">

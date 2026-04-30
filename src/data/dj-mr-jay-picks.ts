@@ -9,4 +9,6 @@ export const DJ_MR_JAY_PICK_SLUGS = [
   "throwback-ragga",
   "east-african-old-school-part-2",
   "bongo-love-classics",
+  "new-jack-swing-reloaded",
+  "reggae-gold-part-1",
 ] as const;

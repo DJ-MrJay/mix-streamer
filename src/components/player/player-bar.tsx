@@ -25,6 +25,7 @@ const shouldIgnorePlayerShortcut = (target: EventTarget | null) => {
 export default function PlayerBar() {
   const {
     currentTrack,
+    isPlayerBarVisible,
     isPlaying,
     toggle,
     seek,
@@ -215,7 +216,7 @@ export default function PlayerBar() {
   }, [currentTrack]);
 
   // If no track is playing, don't render the player bar
-  if (!currentTrack) {
+  if (!currentTrack || !isPlayerBarVisible) {
     return null;
   }
 

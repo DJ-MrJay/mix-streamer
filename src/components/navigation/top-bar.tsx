@@ -6,6 +6,7 @@ import { Moon, Search, SunMedium, X } from "lucide-react";
 
 import AppImage from "@/components/ui/app-image";
 import { Input } from "@/components/ui/input";
+import { usePlayer } from "@/hooks/use-player";
 import {
   applyThemeToDocument,
   getResolvedTheme,
@@ -146,6 +147,14 @@ export default function TopBar({
     setTheme(nextTheme);
   };
 
+  const handleLogoClick = () => {
+    const { isPlaying, hidePlayerBar } = usePlayer.getState();
+
+    if (!isPlaying) {
+      hidePlayerBar();
+    }
+  };
+
   const handleSearchButtonClick = () => {
     if (!searchEnabled) {
       return;
@@ -194,6 +203,7 @@ export default function TopBar({
             href="/"
             className="flex min-w-0 items-center gap-3"
             aria-label="Go to home"
+            onClick={handleLogoClick}
           >
             <div className="relative flex size-11 items-center justify-center overflow-hidden bg-card/80 sm:size-14">
               <AppImage

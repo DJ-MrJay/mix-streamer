@@ -6,6 +6,7 @@ export type HomeMixSection = {
   id: string;
   title: string;
   mixes: MixRecord[];
+  mobileLayout?: "grid" | "carousel";
 };
 
 const LATEST_SECTION_LIMIT = 4;
@@ -18,7 +19,8 @@ const HIP_HOP_AND_RNB_PATTERN = /hip[\s-]?hop|rap|r&b|rnb/;
 const SOUL_PATTERN = /\bsoul\b/;
 const VARIOUS_ARTIST_PATTERN = /\bvarious\b/i;
 
-const getGenreText = (mix: MixRecord) => (mix.genre ?? []).join(" ").toLowerCase();
+const getGenreText = (mix: MixRecord) =>
+  (mix.genre ?? []).join(" ").toLowerCase();
 
 const getMixTitleYear = (title: string) => {
   const match = title.match(TITLE_YEAR_PATTERN);
@@ -70,6 +72,7 @@ const addSection = ({
   title,
   mixes,
   limit,
+  mobileLayout = "grid",
 }: {
   sections: HomeMixSection[];
   usedMixIds: Set<string>;
@@ -77,6 +80,7 @@ const addSection = ({
   title: string;
   mixes: MixRecord[];
   limit?: number;
+  mobileLayout?: "grid" | "carousel";
 }) => {
   const selectedMixes = takeAvailableMixes(mixes, usedMixIds, limit);
 
@@ -88,7 +92,7 @@ const addSection = ({
     usedMixIds.add(mix.id);
   }
 
-  sections.push({ id, title, mixes: selectedMixes });
+  sections.push({ id, title, mixes: selectedMixes, mobileLayout });
 };
 
 const getCuratedPickMixes = (mixes: MixRecord[]) => {
@@ -153,6 +157,16 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     id: "dj-mr-jay-picks",
     title: "Top DJ Mr. Jay picks",
     mixes: getCuratedPickMixes(mixes),
+    mobileLayout: "carousel",
+  });
+
+  addSection({
+    sections,
+    usedMixIds,
+    id: "soul-classics",
+    title: "Soul classics",
+    mixes: mixes.filter(isSoulMix),
+    limit: SOUL_SECTION_LIMIT,
   });
 
   addSection({
@@ -161,6 +175,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     id: "kenya-club-bangers-by-year",
     title: "Kenya club bangers by year",
     mixes: sortKenyaClubBangersByYear(mixes.filter(isKenyaClubBangerMix)),
+    mobileLayout: "carousel",
   });
 
   addSection({
@@ -178,15 +193,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     id: "tributes",
     title: "Tribute mixes",
     mixes: mixes.filter(isTributeMix),
-  });
-
-  addSection({
-    sections,
-    usedMixIds,
-    id: "soul-classics",
-    title: "Soul classics",
-    mixes: mixes.filter(isSoulMix),
-    limit: SOUL_SECTION_LIMIT,
+    mobileLayout: "carousel",
   });
 
   addSection({

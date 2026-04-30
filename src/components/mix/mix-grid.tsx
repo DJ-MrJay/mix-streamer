@@ -58,6 +58,41 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
     </div>
   );
 
+  const renderSectionMixes = (
+    items: MixRecord[],
+    mobileLayout: "grid" | "carousel" = "grid",
+  ) => {
+    const disableHoverRing = mobileLayout === "carousel";
+
+    if (mobileLayout !== "carousel") {
+      return renderMixGrid(items);
+    }
+
+    return (
+      <>
+        <div className="mx-[-1rem] flex gap-4 overflow-x-auto px-4 [scrollbar-width:none] [-ms-overflow-style:none] sm:hidden [&::-webkit-scrollbar]:hidden">
+          {items.map((mix) => (
+            <div
+              key={mix.id}
+              className="w-[70vw] max-w-[18rem] shrink-0 snap-start"
+            >
+              <MixCard mix={mix} disableHoverRing={disableHoverRing} />
+            </div>
+          ))}
+        </div>
+        <div className="hidden sm:grid sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+          {items.map((mix) => (
+            <MixCard
+              key={mix.id}
+              mix={mix}
+              disableHoverRing={disableHoverRing}
+            />
+          ))}
+        </div>
+      </>
+    );
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6">
       {isSearchResultsView ? (
@@ -83,7 +118,7 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
                 {section.title}
               </h2>
 
-              {renderMixGrid(section.mixes)}
+              {renderSectionMixes(section.mixes, section.mobileLayout)}
             </section>
           ))}
         </div>
