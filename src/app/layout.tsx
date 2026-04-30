@@ -3,6 +3,7 @@ import { helveticaNowDisplay } from "@/app/fonts";
 import { getSiteUrl, toAbsoluteUrl } from "@/lib/site-url";
 import { getThemeScript } from "@/lib/theme";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next"
 
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
