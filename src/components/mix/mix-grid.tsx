@@ -128,7 +128,6 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
         </div>
         {renderBalancedHomeGrid(items, {
           className: "hidden sm:grid sm:grid-cols-3 sm:gap-4 xl:grid-cols-4",
-          disableHoverRing,
         })}
       </>
     );

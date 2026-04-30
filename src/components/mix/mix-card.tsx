@@ -107,7 +107,7 @@ export default function MixCard({
     <div
       onClick={handleCardClick}
       className={`group relative cursor-pointer overflow-hidden rounded-sm bg-card text-card-foreground transition-all duration-800 ${
-        disableHoverRing ? "" : "hover:ring-6 hover:ring-muted"
+        disableHoverRing ? "" : "sm:hover:ring-6 sm:hover:ring-muted"
       } ${isCurrentTrack ? "border-primary/30 ring-2 ring-primary/30" : ""}`}
     >
       {/* Album Art */}
