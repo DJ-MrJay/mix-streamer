@@ -120,7 +120,7 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
           {items.map((mix) => (
             <div
               key={mix.id}
-              className="w-[70vw] max-w-[18rem] shrink-0 snap-start"
+              className="w-[60vw] max-w-[18rem] shrink-0 snap-start"
             >
               <MixCard mix={mix} disableHoverRing={disableHoverRing} />
             </div>
@@ -153,7 +153,7 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
             >
               <h2
                 id={section.id}
-                className="text-2xl font-semibold tracking-tight text-foreground"
+                className="text-2xl font-black text-foreground"
               >
                 {section.title}
               </h2>

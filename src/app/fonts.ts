@@ -17,6 +17,11 @@ export const helveticaNowDisplay = localFont({
       weight: "700",
       style: "normal",
     },
+    {
+      path: "../../public/fonts/Helvetica Now Display Black.otf",
+      weight: "900",
+      style: "normal",
+    },
   ],
   display: "swap",
   variable: "--font-helvetica-now-display",
