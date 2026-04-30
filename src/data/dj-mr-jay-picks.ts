@@ -1,4 +1,5 @@
 export const DJ_MR_JAY_PICK_SLUGS = [
+  "the-ck-mixx-part-i",
   "super-soul-2023",
   "rhythmix-part-ii",
   "haappiness-afropop-2021-2022",
@@ -7,7 +8,6 @@ export const DJ_MR_JAY_PICK_SLUGS = [
   "classic-house-vol-2",
   "bongopiano-2023",
   "throwback-ragga",
-  "east-african-old-school-part-2",
   "bongo-love-classics",
   "new-jack-swing-reloaded",
   "reggae-gold-part-1",
