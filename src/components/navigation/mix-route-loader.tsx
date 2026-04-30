@@ -10,7 +10,7 @@ type MixRouteLoaderProps = {
 export default function MixRouteLoader({
   className,
   compact = false,
-  description = "Getting the next page ready...",
+  description = "Getting page ready...",
 }: MixRouteLoaderProps) {
   return (
     <div
