@@ -1,9 +1,23 @@
 import { cache } from 'react'
 
+import { getDisplayTrackInfo } from '@/lib/mix-display'
 import type { MixRecord } from '@/types/mix'
 
 import { sortMixesByRecency } from './mix-sort'
 import { getSupabase } from './supabase'
+
+type MixDescriptionSource = Pick<
+  MixRecord,
+  'id' | 'title' | 'artist' | 'description'
+>
+
+const collapseWhitespace = (value: string) => value.replace(/\s+/g, ' ').trim()
+
+const normalizeDescription = (value: string | null | undefined) =>
+  collapseWhitespace(value ?? '') || null
+
+const getMixSharedContentKey = (mix: Pick<MixRecord, 'title' | 'artist'>) =>
+  collapseWhitespace(getDisplayTrackInfo(mix).title).toLowerCase()
 
 export const getMixes = cache(async (): Promise<MixRecord[]> => {
   const supabase = getSupabase()
@@ -36,3 +50,28 @@ export const getMixBySlug = cache(async (slug: string): Promise<MixRecord | null
 
   return (data as MixRecord | null) ?? null
 })
+
+export const getSharedMixDescription = cache(
+  async (mix: MixDescriptionSource) => {
+    const ownDescription = normalizeDescription(mix.description)
+
+    if (ownDescription) {
+      return ownDescription
+    }
+
+    const shareKey = getMixSharedContentKey(mix)
+    const matchingMixes = await getMixes()
+    const sharedMix = matchingMixes.find((candidateMix) => {
+      if (candidateMix.id === mix.id) {
+        return false
+      }
+
+      return (
+        getMixSharedContentKey(candidateMix) === shareKey &&
+        Boolean(normalizeDescription(candidateMix.description))
+      )
+    })
+
+    return normalizeDescription(sharedMix?.description)
+  }
+)

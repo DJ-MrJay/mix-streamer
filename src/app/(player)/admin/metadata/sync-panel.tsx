@@ -50,8 +50,10 @@ const statusStyles = {
 
 export default function MetadataSyncPanel({
   defaultFolderId,
+  defaultVideoFolderId,
 }: {
   defaultFolderId: string
+  defaultVideoFolderId: string
 }) {
   const [importState, importFormAction] = useActionState(
     runDriveFolderImportAction,
@@ -76,9 +78,10 @@ export default function MetadataSyncPanel({
               Drive library importer
             </CardTitle>
             <CardDescription className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-              Import brand-new audio files from your Google Drive folder into
-              Supabase, skip rows that already exist by <code>drive_file_id</code>,
-              and optionally sync metadata for the new rows immediately.
+              Import brand-new audio and video files from your Google Drive
+              folders into Supabase, skip rows that already exist by{' '}
+              <code>drive_file_id</code>, and optionally sync metadata and
+              video thumbnails for the new rows immediately.
             </CardDescription>
           </div>
         </CardHeader>
@@ -122,7 +125,7 @@ export default function MetadataSyncPanel({
 
           <CardContent>
             <form action={importFormAction} className="space-y-5">
-              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <div className="grid gap-4 lg:grid-cols-3">
                 <label className="space-y-2">
                   <span className="text-sm font-medium text-foreground">
                     Admin token
@@ -138,13 +141,25 @@ export default function MetadataSyncPanel({
 
                 <label className="space-y-2">
                   <span className="text-sm font-medium text-foreground">
-                    Drive folder ID
+                    Drive audio/media folder ID
                   </span>
                   <Input
                     type="text"
                     name="folderId"
                     defaultValue={defaultFolderId}
-                    placeholder="Defaults to GOOGLE_DRIVE_AUDIO_FOLDER_ID"
+                    placeholder="Defaults to GOOGLE_DRIVE_MEDIA_FOLDER_ID"
+                  />
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-foreground">
+                    Drive video folder ID
+                  </span>
+                  <Input
+                    type="text"
+                    name="videoFolderId"
+                    defaultValue={defaultVideoFolderId}
+                    placeholder="Defaults to GOOGLE_DRIVE_VIDEO_FOLDER_ID"
                   />
                 </label>
               </div>
@@ -167,7 +182,7 @@ export default function MetadataSyncPanel({
                     defaultChecked
                     className="size-4 rounded border-input bg-background"
                   />
-                  <span>Run metadata sync for newly imported rows</span>
+                  <span>Run metadata and video thumbnail sync for newly imported rows</span>
                 </label>
               </div>
 
@@ -204,10 +219,28 @@ export default function MetadataSyncPanel({
                       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         <div className="rounded-2xl bg-background/60 px-3 py-2">
                           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                            Folder
+                            Audio/media folder
                           </p>
                           <p className="mt-1 truncate text-sm text-foreground">
-                            {importState.summary.folderId}
+                            {importState.summary.folderId ?? 'Not scanned'}
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl bg-background/60 px-3 py-2">
+                          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Video folder
+                          </p>
+                          <p className="mt-1 truncate text-sm text-foreground">
+                            {importState.summary.videoFolderId ?? 'Not scanned'}
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl bg-background/60 px-3 py-2">
+                          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Folders checked
+                          </p>
+                          <p className="mt-1 text-sm text-foreground">
+                            {importState.summary.scannedFolders}
                           </p>
                         </div>
 
@@ -222,10 +255,28 @@ export default function MetadataSyncPanel({
 
                         <div className="rounded-2xl bg-background/60 px-3 py-2">
                           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Media files
+                          </p>
+                          <p className="mt-1 text-sm text-foreground">
+                            {importState.summary.supportedMediaFiles}
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl bg-background/60 px-3 py-2">
+                          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                             Audio files
                           </p>
                           <p className="mt-1 text-sm text-foreground">
                             {importState.summary.supportedAudioFiles}
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl bg-background/60 px-3 py-2">
+                          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Video files
+                          </p>
+                          <p className="mt-1 text-sm text-foreground">
+                            {importState.summary.supportedVideoFiles}
                           </p>
                         </div>
 
@@ -272,6 +323,7 @@ export default function MetadataSyncPanel({
                             >
                               <p className="font-medium">{mix.title}</p>
                               <p className="mt-1 text-xs text-muted-foreground">
+                                {mix.mediaType ? `${mix.mediaType} | ` : ''}
                                 {mix.slug ? `/mix/${mix.slug}` : 'No slug'}
                                 {mix.metadataStatus
                                   ? ` | ${mix.metadataStatus}`
@@ -426,8 +478,9 @@ export default function MetadataSyncPanel({
 
             <CardContent className="space-y-3 text-sm leading-relaxed text-muted-foreground">
               <p>
-                The importer scans the configured Drive folder, filters to supported
-                audio files, and skips any row whose <code>drive_file_id</code> already
+                The importer scans the configured Drive audio/media folder and
+                optional video folder, filters to supported audio and video
+                files, and skips any row whose <code>drive_file_id</code> already
                 exists in Supabase.
               </p>
 
@@ -437,8 +490,8 @@ export default function MetadataSyncPanel({
               </p>
 
               <p>
-                If you enable metadata sync, the importer also parses embedded tags
-                and cover art for the newly inserted rows in the same run.
+                If you enable metadata sync, the importer parses embedded audio tags
+                and stores Drive-generated video frame thumbnails for video rows.
               </p>
             </CardContent>
           </Card>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Play, Pause, Music, Headphones, Loader2 } from "lucide-react";
+import { Play, Pause, Music, Headphones, Loader2, Video } from "lucide-react";
 
 import { useRouteLoading } from "@/components/navigation/route-loading-provider";
 import { usePlayer } from "@/hooks/use-player";
@@ -14,9 +14,11 @@ import AppImage from "@/components/ui/app-image";
 export default function MixCard({
   mix,
   disableHoverRing = false,
+  showMediaBadge = false,
 }: {
   mix: MixRecord;
   disableHoverRing?: boolean;
+  showMediaBadge?: boolean;
 }) {
   const router = useRouter();
   const { startRouteLoading } = useRouteLoading();
@@ -36,8 +38,12 @@ export default function MixCard({
   const isCurrentlyPlaying = isCurrentTrack && isPlaying;
   const isCurrentlyLoading = isCurrentTrack && isLoading;
   const trackInfo = getDisplayTrackInfo(mix);
+  const mediaType = mix.media_type ?? "audio";
+  const isVideo = mediaType === "video";
   const detailHref = mix.slug ? `/mix/${mix.slug}` : null;
-  const playButtonLabel = isCurrentlyPlaying
+  const playButtonLabel = isVideo
+    ? `Watch ${trackInfo.title}`
+    : isCurrentlyPlaying
     ? `Pause ${trackInfo.title}`
     : `Play ${trackInfo.title}`;
 
@@ -55,6 +61,15 @@ export default function MixCard({
   const handlePlayClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (isVideo) {
+      if (detailHref) {
+        startRouteLoading();
+        router.push(detailHref);
+      }
+
+      return;
+    }
 
     if (isCurrentTrack && isPlaying) {
       pause();
@@ -109,7 +124,11 @@ export default function MixCard({
       } ${isCurrentTrack ? "border-primary/30 ring-2 ring-primary/30" : ""}`}
     >
       {/* Album Art */}
-      <div className="relative aspect-square overflow-hidden bg-muted">
+      <div
+        className={`relative overflow-hidden bg-muted ${
+          isVideo ? "aspect-video" : "aspect-square"
+        }`}
+      >
         {mix.cover_image_url && !imageError ? (
           <AppImage
             src={mix.cover_image_url}
@@ -124,7 +143,11 @@ export default function MixCard({
             className="flex h-full w-full flex-col items-center justify-center"
             style={getGradientStyle(mix.id)}
           >
-            <Music size={64} className="mb-2 text-white/35" />
+            {isVideo ? (
+              <Video size={64} className="mb-2 text-white/35" />
+            ) : (
+              <Music size={64} className="mb-2 text-white/35" />
+            )}
             <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-black/15 backdrop-blur-sm">
               <Headphones size={32} className="text-white/55" />
             </div>
@@ -145,13 +168,19 @@ export default function MixCard({
           <div className="rounded-full bg-primary/95 p-3 text-primary-foreground shadow-2xl transition-transform md:group-hover:scale-110">
             {isCurrentlyLoading ? (
               <Loader2 size={28} className="animate-spin" />
-            ) : isCurrentlyPlaying ? (
+            ) : isCurrentlyPlaying && !isVideo ? (
               <Pause size={28} fill="currentColor" />
             ) : (
               <Play size={28} fill="currentColor" className="ml-1" />
             )}
           </div>
         </button>
+
+        {showMediaBadge ? (
+          <div className="absolute top-2 right-2 rounded-full bg-background/90 px-2 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-foreground backdrop-blur-sm">
+            {mediaType}
+          </div>
+        ) : null}
 
         {/* Duration */}
         {duration && (
@@ -161,7 +190,7 @@ export default function MixCard({
         )}
 
         {/* Loading badge */}
-        {isCurrentTrack && isCurrentlyLoading && (
+        {!isVideo && isCurrentTrack && isCurrentlyLoading && (
           <div className="absolute top-2 left-2 flex items-center gap-2 rounded-full bg-black/80 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
             <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
             <span>LOADING</span>
@@ -169,7 +198,7 @@ export default function MixCard({
         )}
 
         {/* Playing badge */}
-        {isCurrentTrack && isPlaying && !isCurrentlyLoading && (
+        {!isVideo && isCurrentTrack && isPlaying && !isCurrentlyLoading && (
           <div className="absolute top-2 left-2 flex items-center gap-2 rounded-full bg-green-600 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
             <div className="h-2 w-2 rounded-full bg-white " />
             <span>PLAYING</span>
@@ -177,7 +206,7 @@ export default function MixCard({
         )}
 
         {/* Paused badge */}
-        {isCurrentTrack && !isPlaying && !isCurrentlyLoading && (
+        {!isVideo && isCurrentTrack && !isPlaying && !isCurrentlyLoading && (
           <div className="absolute top-2 left-2 flex items-center gap-2 rounded-full bg-red-600 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
             <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
             <span>PAUSED</span>

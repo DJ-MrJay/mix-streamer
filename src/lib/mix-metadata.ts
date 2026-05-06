@@ -7,6 +7,7 @@ import {
   getAudioFileDetailsByDriveFileId,
   getDriveFileStream,
 } from '@/lib/audio-files'
+import { getDriveAccessToken } from '@/lib/google-drive'
 import { sortMixesByRecency } from '@/lib/mix-sort'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { MixMetadataStatus, MixRecord } from '@/types/mix'
@@ -144,6 +145,9 @@ const getPictureExtension = (format: string) => {
 const getFormatName = (container: string | null | undefined) =>
   normalizeText(container)?.toLowerCase() ?? null
 
+const getContentTypeFormatName = (contentType: string) =>
+  normalizeText(contentType.split('/')[1])?.toLowerCase() ?? null
+
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error && error.message) {
     return error.message
@@ -178,6 +182,80 @@ const uploadCoverArt = async ({
 
   const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(path)
   return data.publicUrl
+}
+
+const getLargeDriveThumbnailUrl = (thumbnailLink: string) =>
+  thumbnailLink.replace(/=s\d+(?:-[^/?#]+)?(?=($|[?#]))/, '=w1280-h720-p-k-nu')
+
+const fetchDriveThumbnail = async (thumbnailLink: string) => {
+  const token = await getDriveAccessToken()
+  const response = await fetch(getLargeDriveThumbnailUrl(thumbnailLink), {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Drive thumbnail: ${response.status}`)
+  }
+
+  const contentType = response.headers.get('content-type') || 'image/jpeg'
+
+  if (!contentType.toLowerCase().startsWith('image/')) {
+    throw new Error('Drive thumbnail response was not an image.')
+  }
+
+  return {
+    data: new Uint8Array(await response.arrayBuffer()),
+    format: contentType,
+  }
+}
+
+const syncVideoMixMetadata = async (
+  mix: MixRecord
+): Promise<MixMetadataSyncResult> => {
+  const mixesTable = getMixesTable()
+  const fileDetails = await getAudioFileDetailsByDriveFileId(mix.drive_file_id)
+
+  if (fileDetails.mediaType !== 'video') {
+    throw new Error('This Drive file is not a supported video file.')
+  }
+
+  const coverImageUrl = fileDetails.thumbnailLink
+    ? await uploadCoverArt({
+        mixId: mix.id,
+        coverArt: await fetchDriveThumbnail(fileDetails.thumbnailLink),
+      })
+    : mix.cover_image_url
+
+  if (!coverImageUrl) {
+    throw new Error('Google Drive has not generated a video thumbnail yet.')
+  }
+
+  const { data: updatedMix, error } = await mixesTable
+    .update({
+      cover_image_url: coverImageUrl,
+      duration: fileDetails.duration ?? mix.duration ?? null,
+      format: getContentTypeFormatName(fileDetails.contentType) ?? mix.format,
+      drive_modified_at: fileDetails.driveModifiedAt ?? mix.drive_modified_at,
+      metadata_status: 'succeeded',
+      metadata_extracted_at: new Date().toISOString(),
+      metadata_error: null,
+    })
+    .eq('id', mix.id)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return {
+    mixId: mix.id,
+    status: 'succeeded',
+    error: null,
+    updatedMix: updatedMix as MixRecord,
+  }
 }
 
 const extractMixMetadata = async (
@@ -264,6 +342,10 @@ export const syncMixMetadata = async (
   }
 
   try {
+    if ((mix.media_type ?? 'audio') === 'video') {
+      return await syncVideoMixMetadata(mix)
+    }
+
     const fileDetails = await getAudioFileDetailsByDriveFileId(mix.drive_file_id)
     driveModifiedAt = fileDetails.driveModifiedAt ?? driveModifiedAt
 

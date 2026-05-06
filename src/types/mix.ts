@@ -1,5 +1,7 @@
 export type MixGenre = string[]
 
+export type MixMediaType = 'audio' | 'video'
+
 export type TracklistsBySlug = Record<string, string[]>
 
 export type MixMetadataStatus =
@@ -19,6 +21,7 @@ export interface MixRecord {
   published: boolean | null
   created_at: string | null
   drive_modified_at: string | null
+  media_type: MixMediaType | null
   artist: string | null
   album: string | null
   genre: MixGenre | null

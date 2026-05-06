@@ -9,9 +9,13 @@ export type DriveImportActionState = {
   status: 'idle' | 'success' | 'error'
   message: string | null
   summary: {
-    folderId: string
+    folderId: string | null
+    videoFolderId: string | null
+    scannedFolders: number
     scannedFiles: number
+    supportedMediaFiles: number
     supportedAudioFiles: number
+    supportedVideoFiles: number
     inserted: number
     skippedExisting: number
     skippedUnsupported: number
@@ -24,6 +28,7 @@ export type DriveImportActionState = {
     id: string
     title: string
     slug: string | null
+    mediaType: string | null
     metadataStatus: string | null
   }>
   metadataFailures: Array<{
@@ -97,6 +102,7 @@ export async function runDriveFolderImportAction(
 
     const result = await importNewMixesFromDriveFolder({
       folderId: normalizeFolderId(formData.get('folderId')),
+      videoFolderId: normalizeFolderId(formData.get('videoFolderId')),
       publishImported: isChecked(formData.get('publishImported')),
       syncMetadata: isChecked(formData.get('syncMetadata')),
     })
@@ -116,15 +122,19 @@ export async function runDriveFolderImportAction(
               }.`
             : '.'
         }`
-      : 'No new audio mixes were found in the configured Drive folder.'
+      : 'No new audio or video mixes were found in the configured Drive folders.'
 
     return {
       status: 'success',
       message,
       summary: {
         folderId: result.folderId,
+        videoFolderId: result.videoFolderId,
+        scannedFolders: result.scannedFolders,
         scannedFiles: result.scannedFiles,
+        supportedMediaFiles: result.supportedMediaFiles,
         supportedAudioFiles: result.supportedAudioFiles,
+        supportedVideoFiles: result.supportedVideoFiles,
         inserted: insertedCount,
         skippedExisting: result.skippedExisting,
         skippedUnsupported: result.skippedUnsupported,
@@ -137,6 +147,7 @@ export async function runDriveFolderImportAction(
         id: mix.id,
         title: mix.title,
         slug: mix.slug,
+        mediaType: mix.mediaType,
         metadataStatus: mix.metadataStatus,
       })),
       metadataFailures: result.metadataFailed,

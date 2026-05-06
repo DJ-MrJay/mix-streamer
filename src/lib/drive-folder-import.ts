@@ -1,9 +1,10 @@
 import "server-only";
 
+import { getContentType, getMediaType } from "@/lib/audio-files";
 import { getDrive } from "@/lib/google-drive";
 import { syncMixMetadata } from "@/lib/mix-metadata";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import type { MixRecord } from "@/types/mix";
+import type { MixMediaType, MixRecord } from "@/types/mix";
 import type { Database } from "@/types/supabase";
 
 type MixInsert = Database["public"]["Tables"]["mixes"]["Insert"];
@@ -29,6 +30,10 @@ type DriveFolderFile = {
   modifiedTime: string | null;
 };
 
+type DriveFolderSource = {
+  folderId: string;
+};
+
 type ExistingMixIdentity = Pick<MixRecord, "drive_file_id" | "slug">;
 
 type ImportedMixSummary = {
@@ -36,13 +41,18 @@ type ImportedMixSummary = {
   title: string;
   slug: string | null;
   driveFileId: string;
+  mediaType: MixMediaType | null;
   metadataStatus: MixRecord["metadata_status"];
 };
 
 export type DriveFolderImportResult = {
-  folderId: string;
+  folderId: string | null;
+  videoFolderId: string | null;
+  scannedFolders: number;
   scannedFiles: number;
+  supportedMediaFiles: number;
   supportedAudioFiles: number;
+  supportedVideoFiles: number;
   insertedMixes: ImportedMixSummary[];
   skippedExisting: number;
   skippedUnsupported: number;
@@ -55,15 +65,6 @@ export type DriveFolderImportResult = {
   publishImported: boolean;
   syncMetadata: boolean;
 };
-
-const SUPPORTED_AUDIO_EXTENSIONS = [
-  ".mp3",
-  ".m4a",
-  ".aac",
-  ".wav",
-  ".ogg",
-  ".flac",
-] as const;
 
 const DRIVE_FOLDER_FIELDS = "nextPageToken, files(id, name, mimeType, modifiedTime)";
 
@@ -107,36 +108,56 @@ const createUniqueSlug = (title: string, reservedSlugs: Set<string>) => {
   return slug;
 };
 
-const isSupportedAudioFile = ({
-  fileName,
-  mimeType,
-}: Pick<DriveFolderFile, "fileName" | "mimeType">) => {
-  const normalizedMimeType = mimeType.toLowerCase();
-
-  if (normalizedMimeType.startsWith("audio/")) {
-    return true;
-  }
-
-  const normalizedName = fileName.toLowerCase();
-  return SUPPORTED_AUDIO_EXTENSIONS.some((extension) =>
-    normalizedName.endsWith(extension),
-  );
-};
-
-const getConfiguredAudioFolderId = (overrideFolderId?: string | null) => {
+const getConfiguredDriveFolderIds = ({
+  folderIdOverride,
+  videoFolderIdOverride,
+}: {
+  folderIdOverride?: string | null;
+  videoFolderIdOverride?: string | null;
+}) => {
   const folderId =
-    overrideFolderId?.trim() ||
+    folderIdOverride?.trim() ||
+    process.env.GOOGLE_DRIVE_MEDIA_FOLDER_ID?.trim() ||
     process.env.GOOGLE_DRIVE_AUDIO_FOLDER_ID?.trim() ||
     process.env.GOOGLE_DRIVE_FOLDER_ID?.trim() ||
     "";
+  const videoFolderId =
+    videoFolderIdOverride?.trim() ||
+    process.env.GOOGLE_DRIVE_VIDEO_FOLDER_ID?.trim() ||
+    "";
 
-  if (!folderId) {
+  if (!folderId && !videoFolderId) {
     throw new Error(
-      "No audio Drive folder is configured. Set GOOGLE_DRIVE_AUDIO_FOLDER_ID or GOOGLE_DRIVE_FOLDER_ID, or enter a folder ID in the admin form.",
+      "No Drive media folder is configured. Set GOOGLE_DRIVE_MEDIA_FOLDER_ID, GOOGLE_DRIVE_AUDIO_FOLDER_ID, GOOGLE_DRIVE_VIDEO_FOLDER_ID, or GOOGLE_DRIVE_FOLDER_ID, or enter a folder ID in the admin form.",
     );
   }
 
-  return folderId;
+  return {
+    folderId: folderId || null,
+    videoFolderId: videoFolderId || null,
+  };
+};
+
+const getUniqueDriveFolderSources = ({
+  folderId,
+  videoFolderId,
+}: {
+  folderId: string | null;
+  videoFolderId: string | null;
+}) => {
+  const seenFolderIds = new Set<string>();
+  const folderSources: DriveFolderSource[] = [];
+
+  for (const candidateFolderId of [folderId, videoFolderId]) {
+    if (!candidateFolderId || seenFolderIds.has(candidateFolderId)) {
+      continue;
+    }
+
+    seenFolderIds.add(candidateFolderId);
+    folderSources.push({ folderId: candidateFolderId });
+  }
+
+  return folderSources;
 };
 
 const listDriveFolderFiles = async (folderId: string): Promise<DriveFolderFile[]> => {
@@ -189,22 +210,40 @@ const getExistingMixIdentities = async (): Promise<ExistingMixIdentity[]> => {
   return (data ?? []) as ExistingMixIdentity[];
 };
 
-export const getDefaultAudioDriveFolderId = () =>
+export const getDefaultMediaDriveFolderId = () =>
+  process.env.GOOGLE_DRIVE_MEDIA_FOLDER_ID?.trim() ||
   process.env.GOOGLE_DRIVE_AUDIO_FOLDER_ID?.trim() ||
   process.env.GOOGLE_DRIVE_FOLDER_ID?.trim() ||
   "";
 
+export const getDefaultVideoDriveFolderId = () =>
+  process.env.GOOGLE_DRIVE_VIDEO_FOLDER_ID?.trim() || "";
+
+export const getDefaultAudioDriveFolderId = getDefaultMediaDriveFolderId;
+
 export const importNewMixesFromDriveFolder = async ({
   folderId: folderIdOverride,
+  videoFolderId: videoFolderIdOverride,
   publishImported = true,
   syncMetadata = true,
 }: {
   folderId?: string | null;
+  videoFolderId?: string | null;
   publishImported?: boolean;
   syncMetadata?: boolean;
 }): Promise<DriveFolderImportResult> => {
-  const folderId = getConfiguredAudioFolderId(folderIdOverride);
-  const driveFiles = await listDriveFolderFiles(folderId);
+  const { folderId, videoFolderId } = getConfiguredDriveFolderIds({
+    folderIdOverride,
+    videoFolderIdOverride,
+  });
+  const folderSources = getUniqueDriveFolderSources({ folderId, videoFolderId });
+  const driveFiles = (
+    await Promise.all(
+      folderSources.map((folderSource) =>
+        listDriveFolderFiles(folderSource.folderId),
+      ),
+    )
+  ).flat();
   const existingMixes = await getExistingMixIdentities();
   const existingDriveFileIds = new Set<string>();
   const reservedSlugs = new Set<string>();
@@ -222,15 +261,25 @@ export const importNewMixesFromDriveFolder = async ({
   const rowsToInsert: MixInsert[] = [];
   let skippedExisting = 0;
   let skippedUnsupported = 0;
+  let supportedMediaFiles = 0;
   let supportedAudioFiles = 0;
+  let supportedVideoFiles = 0;
 
   for (const file of driveFiles) {
-    if (!isSupportedAudioFile(file)) {
+    const mediaType = getMediaType(file.fileName, file.mimeType);
+
+    if (!mediaType) {
       skippedUnsupported += 1;
       continue;
     }
 
-    supportedAudioFiles += 1;
+    supportedMediaFiles += 1;
+
+    if (mediaType === "audio") {
+      supportedAudioFiles += 1;
+    } else {
+      supportedVideoFiles += 1;
+    }
 
     if (existingDriveFileIds.has(file.fileId)) {
       skippedExisting += 1;
@@ -245,6 +294,8 @@ export const importNewMixesFromDriveFolder = async ({
       slug: createUniqueSlug(title, reservedSlugs),
       drive_file_id: file.fileId,
       drive_modified_at: file.modifiedTime,
+      media_type: mediaType,
+      format: getContentType(file.fileName, file.mimeType),
       published: publishImported,
       metadata_status: "pending",
     });
@@ -253,8 +304,12 @@ export const importNewMixesFromDriveFolder = async ({
   if (!rowsToInsert.length) {
     return {
       folderId,
+      videoFolderId,
+      scannedFolders: folderSources.length,
       scannedFiles: driveFiles.length,
+      supportedMediaFiles,
       supportedAudioFiles,
+      supportedVideoFiles,
       insertedMixes: [],
       skippedExisting,
       skippedUnsupported,
@@ -305,8 +360,12 @@ export const importNewMixesFromDriveFolder = async ({
 
   return {
     folderId,
+    videoFolderId,
+    scannedFolders: folderSources.length,
     scannedFiles: driveFiles.length,
+    supportedMediaFiles,
     supportedAudioFiles,
+    supportedVideoFiles,
     insertedMixes: insertedMixes.map((mix) => {
       const latestMix = syncedMixesById.get(mix.id) ?? mix;
 
@@ -315,6 +374,7 @@ export const importNewMixesFromDriveFolder = async ({
         title: latestMix.title,
         slug: latestMix.slug,
         driveFileId: latestMix.drive_file_id,
+        mediaType: latestMix.media_type,
         metadataStatus: latestMix.metadata_status,
       };
     }),

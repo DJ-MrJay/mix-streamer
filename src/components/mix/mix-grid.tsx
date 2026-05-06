@@ -33,6 +33,7 @@ const getSearchableText = (
     mix.artist,
     trackInfo.artist,
     mix.album,
+    mix.media_type ?? "audio",
     mix.genre?.join(" "),
     mix.description,
     tracklistTerms,
@@ -55,7 +56,8 @@ const HomeHero = () => (
           DJ Mr. Jay Mixtapes
         </h1>
         <p className="max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-          Curated mixes for the drive, the dance floor, and every moment that calls for the perfect next track.
+          Curated mixes for the drive, the dance floor, and every moment that
+          calls for the perfect next track.
         </p>
       </div>
     </div>
@@ -82,7 +84,7 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
   const renderMixGrid = (items: MixRecord[]) => (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
       {items.map((mix) => (
-        <MixCard key={mix.id} mix={mix} />
+        <MixCard key={mix.id} mix={mix} showMediaBadge />
       ))}
     </div>
   );
@@ -169,27 +171,29 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
           </p>
         ) : null}
 
-        {filteredMixes.length ? isSearchView ? (
-          renderMixGrid(filteredMixes)
-        ) : (
-          <div className="space-y-10">
-            {homeSections.map((section) => (
-              <section
-                key={section.id}
-                aria-labelledby={section.id}
-                className="space-y-4"
-              >
-                <h2
-                  id={section.id}
-                  className="text-2xl font-black text-foreground"
+        {filteredMixes.length ? (
+          isSearchView ? (
+            renderMixGrid(filteredMixes)
+          ) : (
+            <div className="space-y-10">
+              {homeSections.map((section) => (
+                <section
+                  key={section.id}
+                  aria-labelledby={section.id}
+                  className="space-y-4"
                 >
-                  {section.title}
-                </h2>
+                  <h2
+                    id={section.id}
+                    className="text-2xl font-black text-foreground"
+                  >
+                    {section.title}
+                  </h2>
 
-                {renderSectionMixes(section.mixes, section.mobileLayout)}
-              </section>
-            ))}
-          </div>
+                  {renderSectionMixes(section.mixes, section.mobileLayout)}
+                </section>
+              ))}
+            </div>
+          )
         ) : (
           <div className="flex min-h-72 flex-col items-center justify-center rounded-3xl bg-card/80 px-6 text-center shadow-[0_24px_48px_rgba(0,0,0,0.18)]">
             <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -199,7 +203,8 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
               No mixes found
             </h2>
             <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              Try a different title, artist, track name, genre, or keyword from the mix description.
+              Try a different title, artist, track name, genre, or keyword from
+              the mix description.
             </p>
           </div>
         )}

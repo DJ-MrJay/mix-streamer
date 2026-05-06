@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { getDisplayTrackInfo } from "@/lib/mix-display";
-import { getMixBySlug } from "@/lib/mixes";
+import { getMixBySlug, getSharedMixDescription } from "@/lib/mixes";
 import { toAbsoluteUrl } from "@/lib/site-url";
 import { getTracklistForMix } from "@/lib/tracklists";
 import PlayButton from "@/components/mix/play-button";
 import ShareButton from "@/components/mix/share-button";
+import VideoPlayer from "@/components/mix/video-player";
 import AppImage from "@/components/ui/app-image";
 import BackButton from "@/components/navigation/back-button";
 import { Download } from "lucide-react";
@@ -14,10 +15,11 @@ const defaultShareImage = toAbsoluteUrl("/android-chrome-512x512.png");
 const getMixPageDescription = (
   title: string,
   description: string | null,
-  artist: string | null
+  artist: string | null,
+  mediaType: "audio" | "video" | null
 ) =>
   description?.trim() ||
-  `Listen to ${title}${artist ? ` by ${artist}` : ""} on DJ Mr. Jay Mixtapes.`;
+  `${mediaType === "video" ? "Watch" : "Listen to"} ${title}${artist ? ` by ${artist}` : ""} on DJ Mr. Jay Mixtapes.`;
 
 export async function generateMetadata({
   params,
@@ -36,10 +38,12 @@ export async function generateMetadata({
 
   const trackInfo = getDisplayTrackInfo(mix);
   const title = `${trackInfo.title} | DJ Mr. Jay Mixtapes`;
+  const aboutDescription = await getSharedMixDescription(mix);
   const description = getMixPageDescription(
     trackInfo.title,
-    mix.description,
-    trackInfo.artist
+    aboutDescription,
+    trackInfo.artist,
+    mix.media_type
   );
   const pagePath = `/mix/${mix.slug ?? slug}`;
   const absolutePageUrl = toAbsoluteUrl(pagePath);
@@ -87,7 +91,12 @@ export default async function MixPage({
   }
 
   const trackInfo = getDisplayTrackInfo(mix);
-  const tracklist = await getTracklistForMix(mix);
+  const [tracklist, aboutDescription] = await Promise.all([
+    getTracklistForMix(mix),
+    getSharedMixDescription(mix),
+  ]);
+  const mediaType = mix.media_type ?? "audio";
+  const isVideo = mediaType === "video";
 
   const formatDuration = (seconds?: number) => {
     if (!seconds) return null;
@@ -106,6 +115,7 @@ export default async function MixPage({
   };
 
   const metadataPills = [
+    isVideo ? "Video" : "Audio",
     mix.year ? `Year: ${mix.year}` : null,
     mix.genre?.length ? `Genre: ${mix.genre.join(", ")}` : null,
     mix.duration ? `Length: ${formatDuration(mix.duration)}` : null,
@@ -114,7 +124,7 @@ export default async function MixPage({
   return (
     <div className="min-h-screen bg-background pb-10 text-foreground">
       <div className="relative overflow-hidden border-b border-border">
-        {mix.cover_image_url && (
+        {!isVideo && mix.cover_image_url && (
           <div className="absolute inset-0">
             <AppImage
               src={mix.cover_image_url}
@@ -126,7 +136,9 @@ export default async function MixPage({
           </div>
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/85 to-background" />
+        {!isVideo ? (
+          <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/85 to-background" />
+        ) : null}
 
         <div className="relative mx-auto max-w-6xl px-4 pt-8 pb-8">
           <div className="mb-6 hidden md:block">
@@ -134,29 +146,42 @@ export default async function MixPage({
           </div>
 
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-end">
-            <div className="grid w-full grid-cols-[1fr_auto_1fr] items-start md:block md:w-64">
-              <div className="flex justify-start md:hidden">
-                <BackButton />
-              </div>
-
-              {mix.cover_image_url ? (
-                <AppImage
-                  src={mix.cover_image_url}
-                  alt={mix.title}
-                  width={640}
-                  height={640}
-                  preload
-                  sizes="(max-width: 768px) 60vw, 256px"
-                  className="aspect-square w-[60vw] max-w-[18rem] rounded-lg border border-border object-cover shadow-2xl md:w-64"
-                />
-              ) : (
-                <div className="flex aspect-square w-[60vw] max-w-[18rem] items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-2xl md:w-64">
-                  Cover Unavailable
+            {isVideo ? (
+              <div className="w-full md:w-[34rem]">
+                <div className="mb-4 flex justify-start md:hidden">
+                  <BackButton />
                 </div>
-              )}
+                <VideoPlayer
+                  mixId={mix.id}
+                  poster={mix.cover_image_url}
+                  title={trackInfo.title}
+                />
+              </div>
+            ) : (
+              <div className="grid w-full grid-cols-[1fr_auto_1fr] items-start md:block md:w-64">
+                <div className="flex justify-start md:hidden">
+                  <BackButton />
+                </div>
 
-              <div aria-hidden="true" className="md:hidden" />
-            </div>
+                {mix.cover_image_url ? (
+                  <AppImage
+                    src={mix.cover_image_url}
+                    alt={mix.title}
+                    width={640}
+                    height={640}
+                    preload
+                    sizes="(max-width: 768px) 60vw, 256px"
+                    className="aspect-square w-[60vw] max-w-[18rem] rounded-lg border border-border object-cover shadow-2xl md:w-64"
+                  />
+                ) : (
+                  <div className="flex aspect-square w-[60vw] max-w-[18rem] items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-2xl md:w-64">
+                    Cover Unavailable
+                  </div>
+                )}
+
+                <div aria-hidden="true" className="md:hidden" />
+              </div>
+            )}
 
             <div className="flex-1">
               <p className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
@@ -187,19 +212,21 @@ export default async function MixPage({
               ) : null}
 
               <div className="flex flex-wrap items-center gap-3">
-                <PlayButton
-                  mix={{
-                    id: mix.id,
-                    title: trackInfo.title,
-                    drive_file_id: mix.drive_file_id,
-                    slug: mix.slug,
-                    cover_image_url: mix.cover_image_url ?? undefined,
-                    artist: trackInfo.artist,
-                    album: mix.album ?? null,
-                    genre: mix.genre ?? null,
-                    year: mix.year ?? null,
-                  }}
-                />
+                {isVideo ? null : (
+                  <PlayButton
+                    mix={{
+                      id: mix.id,
+                      title: trackInfo.title,
+                      drive_file_id: mix.drive_file_id,
+                      slug: mix.slug,
+                      cover_image_url: mix.cover_image_url ?? undefined,
+                      artist: trackInfo.artist,
+                      album: mix.album ?? null,
+                      genre: mix.genre ?? null,
+                      year: mix.year ?? null,
+                    }}
+                  />
+                )}
                 <a
                   href={`/api/stream/${mix.id}?download=1`}
                   download
@@ -217,13 +244,13 @@ export default async function MixPage({
       </div>
 
       <div className="mx-auto mt-6 flex max-w-6xl flex-col gap-6 px-4">
-        {mix.description && (
+        {aboutDescription && (
           <section className="rounded-lg border border-border bg-card/80 p-5 shadow-lg backdrop-blur-sm">
-            <h2 className="capitalize mb-2 text-lg font-semibold text-foreground">
+            <h2 className="mb-2 text-lg font-semibold text-foreground">
               About this mix
             </h2>
             <p className="leading-relaxed text-muted-foreground">
-              {mix.description}
+              {aboutDescription}
             </p>
           </section>
         )}

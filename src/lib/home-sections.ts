@@ -12,6 +12,7 @@ export type HomeMixSection = {
 const LATEST_SECTION_LIMIT = 4;
 const HIP_HOP_AND_RNB_SECTION_LIMIT = 4;
 const SOUL_SECTION_LIMIT = 4;
+const VIDEO_SECTION_LIMIT = 8;
 const MIXUP_TITLE_PATTERN = /\bmixup\b/i;
 const TIMELESS_PARTY_ANTHEMS_TITLE_PATTERN = /\btimeless party anthems\b/i;
 const TITLE_YEAR_PATTERN = /\b(19|20)\d{2}\b/;
@@ -138,6 +139,10 @@ const isTributeMix = (mix: MixRecord) => {
 
 const isSoulMix = (mix: MixRecord) => SOUL_PATTERN.test(getGenreText(mix));
 
+const isVideoMix = (mix: MixRecord) => mix.media_type === "video";
+
+const isAudioMix = (mix: MixRecord) => !isVideoMix(mix);
+
 export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
   const sections: HomeMixSection[] = [];
   const usedMixIds = new Set<string>();
@@ -147,8 +152,18 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "latest-additions",
     title: "Latest additions",
-    mixes,
+    mixes: mixes.filter(isAudioMix),
     limit: LATEST_SECTION_LIMIT,
+  });
+
+  addSection({
+    sections,
+    usedMixIds,
+    id: "video-mixes",
+    title: "Video mixes",
+    mixes: mixes.filter(isVideoMix),
+    limit: VIDEO_SECTION_LIMIT,
+    mobileLayout: "carousel",
   });
 
   addSection({
@@ -200,7 +215,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     sections,
     usedMixIds,
     id: "more-from-the-crate",
-    title: "More from the DJ crate",
+    title: "More from the mix crate",
     mixes,
   });
 
