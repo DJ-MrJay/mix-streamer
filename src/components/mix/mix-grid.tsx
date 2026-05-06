@@ -43,6 +43,25 @@ const getSearchableText = (
     .toLowerCase();
 };
 
+const HomeHero = () => (
+  <section className="relative min-h-[calc(100dvh-68px)] overflow-hidden bg-background bg-[image:url('/djmrjay-hero.jpg')] bg-cover bg-fixed bg-top sm:min-h-[calc(100dvh-80px)]">
+    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-transparent" />
+    <div className="relative mx-auto flex min-h-[calc(100dvh-68px)] max-w-6xl items-end px-4 pt-8 pb-10 sm:min-h-[calc(100dvh-80px)] md:pb-12">
+      <div>
+        <p className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
+          The Incredible
+        </p>
+        <h1 className="mb-3 max-w-2xl text-3xl font-bold tracking-tight text-foreground md:text-5xl">
+          DJ Mr. Jay Mixtapes
+        </h1>
+        <p className="max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
+          Curated mixes for the drive, the dance floor, and every moment that calls for the perfect next track.
+        </p>
+      </div>
+    </div>
+  </section>
+);
+
 export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
   const { searchValue, isSearchActive, tracklistsBySlug } = useTopBarSearch();
   const deferredSearchValue = useDeferredValue(searchValue);
@@ -140,47 +159,51 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6">
-      {isSearchResultsView ? (
-        <p className="text-sm font-medium text-muted-foreground">
-          {resultCountLabel}
-        </p>
-      ) : null}
+    <>
+      {isSearchView ? null : <HomeHero />}
 
-      {filteredMixes.length ? isSearchView ? (
-        renderMixGrid(filteredMixes)
-      ) : (
-        <div className="space-y-10">
-          {homeSections.map((section) => (
-            <section
-              key={section.id}
-              aria-labelledby={section.id}
-              className="space-y-4"
-            >
-              <h2
-                id={section.id}
-                className="text-2xl font-black text-foreground"
-              >
-                {section.title}
-              </h2>
-
-              {renderSectionMixes(section.mixes, section.mobileLayout)}
-            </section>
-          ))}
-        </div>
-      ) : (
-        <div className="flex min-h-72 flex-col items-center justify-center rounded-3xl bg-card/80 px-6 text-center shadow-[0_24px_48px_rgba(0,0,0,0.18)]">
-          <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <SearchX className="size-6" />
-          </div>
-          <h2 className="text-lg font-semibold text-foreground">
-            No mixes found
-          </h2>
-          <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Try a different title, artist, track name, genre, or keyword from the mix description.
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6">
+        {isSearchResultsView ? (
+          <p className="text-sm font-medium text-muted-foreground">
+            {resultCountLabel}
           </p>
-        </div>
-      )}
-    </div>
+        ) : null}
+
+        {filteredMixes.length ? isSearchView ? (
+          renderMixGrid(filteredMixes)
+        ) : (
+          <div className="space-y-10">
+            {homeSections.map((section) => (
+              <section
+                key={section.id}
+                aria-labelledby={section.id}
+                className="space-y-4"
+              >
+                <h2
+                  id={section.id}
+                  className="text-2xl font-black text-foreground"
+                >
+                  {section.title}
+                </h2>
+
+                {renderSectionMixes(section.mixes, section.mobileLayout)}
+              </section>
+            ))}
+          </div>
+        ) : (
+          <div className="flex min-h-72 flex-col items-center justify-center rounded-3xl bg-card/80 px-6 text-center shadow-[0_24px_48px_rgba(0,0,0,0.18)]">
+            <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <SearchX className="size-6" />
+            </div>
+            <h2 className="text-lg font-semibold text-foreground">
+              No mixes found
+            </h2>
+            <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Try a different title, artist, track name, genre, or keyword from the mix description.
+            </p>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
