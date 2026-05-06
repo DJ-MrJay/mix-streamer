@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { getDisplayTrackInfo } from "@/lib/mix-display";
-import { TRACKLISTS } from "@/data/tracklists";
 import { getMixBySlug } from "@/lib/mixes";
 import { toAbsoluteUrl } from "@/lib/site-url";
+import { getTracklistForMix } from "@/lib/tracklists";
 import PlayButton from "@/components/mix/play-button";
 import ShareButton from "@/components/mix/share-button";
 import AppImage from "@/components/ui/app-image";
@@ -87,7 +87,7 @@ export default async function MixPage({
   }
 
   const trackInfo = getDisplayTrackInfo(mix);
-  const tracklist = TRACKLISTS[mix.slug ?? slug] ?? [];
+  const tracklist = await getTracklistForMix(mix);
 
   const formatDuration = (seconds?: number) => {
     if (!seconds) return null;

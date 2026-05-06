@@ -6,10 +6,9 @@ import { useDeferredValue } from "react";
 import MixCard from "@/components/mix/mix-card";
 import MixCardPlaceholder from "@/components/mix/mix-card-placeholder";
 import { useTopBarSearch } from "@/components/navigation/top-bar-provider";
-import { TRACKLISTS } from "@/data/tracklists";
 import { getHomeMixSections } from "@/lib/home-sections";
 import { getDisplayTrackInfo } from "@/lib/mix-display";
-import type { MixRecord } from "@/types/mix";
+import type { MixRecord, TracklistsBySlug } from "@/types/mix";
 
 const collapseWhitespace = (value: string) => value.replace(/\s+/g, " ").trim();
 
@@ -19,9 +18,14 @@ const normalizeSearchText = (value: string) =>
 const getPlaceholderCount = (itemCount: number, columns: number) =>
   (columns - (itemCount % columns)) % columns;
 
-const getSearchableText = (mix: MixRecord) => {
+const getSearchableText = (
+  mix: MixRecord,
+  tracklistsBySlug: TracklistsBySlug,
+) => {
   const trackInfo = getDisplayTrackInfo(mix);
-  const tracklistTerms = mix.slug ? TRACKLISTS[mix.slug]?.join(" ") : undefined;
+  const tracklistTerms = mix.slug
+    ? tracklistsBySlug[mix.slug]?.join(" ")
+    : undefined;
 
   return [
     mix.title,
@@ -40,14 +44,16 @@ const getSearchableText = (mix: MixRecord) => {
 };
 
 export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
-  const { searchValue, isSearchActive } = useTopBarSearch();
+  const { searchValue, isSearchActive, tracklistsBySlug } = useTopBarSearch();
   const deferredSearchValue = useDeferredValue(searchValue);
   const normalizedQuery = normalizeSearchText(deferredSearchValue);
   const isSearchResultsView = Boolean(normalizedQuery);
   const isSearchView = isSearchActive || isSearchResultsView;
 
   const filteredMixes = normalizedQuery
-    ? mixes.filter((mix) => getSearchableText(mix).includes(normalizedQuery))
+    ? mixes.filter((mix) =>
+        getSearchableText(mix, tracklistsBySlug).includes(normalizedQuery),
+      )
     : mixes;
   const resultCountLabel = `${filteredMixes.length} mix${
     filteredMixes.length === 1 ? "" : "es"

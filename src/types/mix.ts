@@ -1,5 +1,7 @@
 export type MixGenre = string[]
 
+export type TracklistsBySlug = Record<string, string[]>
+
 export type MixMetadataStatus =
   | 'pending'
   | 'processing'
@@ -26,4 +28,14 @@ export interface MixRecord {
   metadata_status: MixMetadataStatus | null
   metadata_extracted_at: string | null
   metadata_error: string | null
+}
+
+export interface MixTrackRecord {
+  id: string
+  mix_id: string
+  position: number
+  title: string
+  artist: string | null
+  start_time_seconds: number | null
+  created_at: string | null
 }

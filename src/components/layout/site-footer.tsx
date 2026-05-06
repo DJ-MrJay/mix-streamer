@@ -1,3 +1,4 @@
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTelegram,
@@ -9,7 +10,7 @@ import {
 type SocialLink = {
   href: string;
   label: string;
-  icon: any; // Using any for simplicity with FontAwesome icons
+  icon: IconDefinition;
 };
 
 const iconClassName = "size-5";

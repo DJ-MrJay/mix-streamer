@@ -1,5 +1,6 @@
 import { Readable } from "node:stream";
 import { NextRequest } from "next/server";
+import { getContentType } from "@/lib/audio-files";
 import { getDrive } from "@/lib/google-drive";
 import { getSupabase } from "@/lib/supabase";
 
@@ -27,41 +28,6 @@ type MixDriveLookupTable = {
       single: () => PromiseLike<DriveFileLookupResult>;
     };
   };
-};
-
-const getContentType = (fileName: string, mimeType: string) => {
-  const normalizedName = fileName.toLowerCase();
-  const normalizedMimeType = mimeType.toLowerCase();
-
-  if (
-    normalizedName.endsWith(".m4a") ||
-    normalizedMimeType === "audio/mp4" ||
-    normalizedMimeType === "audio/x-m4a"
-  ) {
-    return "audio/mp4";
-  }
-
-  if (normalizedName.endsWith(".mp3") || normalizedMimeType === "audio/mpeg") {
-    return "audio/mpeg";
-  }
-
-  if (normalizedName.endsWith(".wav") || normalizedMimeType === "audio/wav") {
-    return "audio/wav";
-  }
-
-  if (normalizedName.endsWith(".ogg") || normalizedMimeType === "audio/ogg") {
-    return "audio/ogg";
-  }
-
-  if (normalizedName.endsWith(".aac") || normalizedMimeType === "audio/aac") {
-    return "audio/aac";
-  }
-
-  if (normalizedMimeType.startsWith("audio/")) {
-    return normalizedMimeType;
-  }
-
-  return "audio/mpeg";
 };
 
 const getContentDisposition = (fileName: string, isDownload: boolean) => {

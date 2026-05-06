@@ -5,12 +5,13 @@ import { usePathname } from 'next/navigation'
 
 import MixGrid from '@/components/mix/mix-grid'
 import TopBar from '@/components/navigation/top-bar'
-import type { MixRecord } from '@/types/mix'
+import type { MixRecord, TracklistsBySlug } from '@/types/mix'
 
 type TopBarSearchContextValue = {
   searchValue: string
   setSearchValue: (value: string) => void
   isSearchActive: boolean
+  tracklistsBySlug: TracklistsBySlug
 }
 
 const TopBarSearchContext = createContext<TopBarSearchContextValue | null>(null)
@@ -28,9 +29,11 @@ export function useTopBarSearch() {
 export default function TopBarProvider({
   children,
   searchMixes = [],
+  tracklistsBySlug = {},
 }: {
   children: React.ReactNode
   searchMixes?: MixRecord[]
+  tracklistsBySlug?: TracklistsBySlug
 }) {
   const pathname = usePathname()
   const [searchValue, setSearchValue] = useState('')
@@ -103,6 +106,7 @@ export default function TopBarProvider({
         searchValue,
         setSearchValue: handleSearchValueChange,
         isSearchActive: isGlobalSearchActive,
+        tracklistsBySlug,
       }}
     >
       <TopBar

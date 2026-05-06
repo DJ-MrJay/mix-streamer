@@ -5,7 +5,7 @@ import type { MixRecord } from '@/types/mix'
 import { sortMixesByRecency } from './mix-sort'
 import { getSupabase } from './supabase'
 
-export async function getMixes(): Promise<MixRecord[]> {
+export const getMixes = cache(async (): Promise<MixRecord[]> => {
   const supabase = getSupabase()
   const { data, error } = await supabase
     .from('mixes')
@@ -18,7 +18,7 @@ export async function getMixes(): Promise<MixRecord[]> {
   }
 
   return sortMixesByRecency((data ?? []) as MixRecord[])
-}
+})
 
 export const getMixBySlug = cache(async (slug: string): Promise<MixRecord | null> => {
   const supabase = getSupabase()
