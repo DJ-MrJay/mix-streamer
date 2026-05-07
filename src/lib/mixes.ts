@@ -1,7 +1,8 @@
 import { cache } from 'react'
 
 import { getDisplayTrackInfo } from '@/lib/mix-display'
-import type { MixRecord } from '@/types/mix'
+import { getMixMediaType } from '@/lib/mix-routes'
+import type { MixMediaType, MixRecord } from '@/types/mix'
 
 import { sortMixesByRecency } from './mix-sort'
 import { getSupabase } from './supabase'
@@ -35,21 +36,63 @@ export const getMixes = cache(async (): Promise<MixRecord[]> => {
 })
 
 export const getMixBySlug = cache(async (slug: string): Promise<MixRecord | null> => {
+  const slugMatches = await getMixesBySlug(slug)
+  return (
+    slugMatches.find((mix) => getMixMediaType(mix) === 'audio') ??
+    slugMatches[0] ??
+    null
+  )
+})
+
+export const getMixesBySlug = cache(async (slug: string): Promise<MixRecord[]> => {
   const supabase = getSupabase()
   const { data, error } = await supabase
     .from('mixes')
     .select('*')
     .eq('slug', slug)
     .eq('published', true)
-    .maybeSingle()
 
   if (error) {
-    console.error(`Error fetching mix for slug "${slug}":`, error)
-    return null
+    console.error(`Error fetching mixes for slug "${slug}":`, error)
+    return []
   }
 
-  return (data as MixRecord | null) ?? null
+  return sortMixesByRecency((data ?? []) as MixRecord[])
 })
+
+export const getMixBySlugAndMediaType = cache(
+  async (
+    slug: string,
+    mediaType: MixMediaType
+  ): Promise<MixRecord | null> => {
+    const supabase = getSupabase()
+    const { data, error } = await supabase
+      .from('mixes')
+      .select('*')
+      .eq('slug', slug)
+      .eq('media_type', mediaType)
+      .eq('published', true)
+      .maybeSingle()
+
+    if (error) {
+      console.error(
+        `Error fetching ${mediaType} mix for slug "${slug}":`,
+        error
+      )
+      return null
+    }
+
+    return (data as MixRecord | null) ?? null
+  }
+)
+
+export const getMixesByMediaType = cache(async (mediaType: MixMediaType) =>
+  (await getMixes()).filter((mix) => getMixMediaType(mix) === mediaType)
+)
+
+export const getAudioMixes = cache(() => getMixesByMediaType('audio'))
+
+export const getVideoMixes = cache(() => getMixesByMediaType('video'))
 
 export const getSharedMixDescription = cache(
   async (mix: MixDescriptionSource) => {

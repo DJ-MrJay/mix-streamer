@@ -29,9 +29,7 @@ export default function PlayerLayoutShell({
           searchMixes={searchMixes}
           tracklistsBySlug={tracklistsBySlug}
         >
-          <main className={`flex-1 ${hidePlayerBar ? "pb-10" : "pb-32"}`}>
-            {children}
-          </main>
+          <main className="flex-1 pb-12">{children}</main>
         </TopBarProvider>
         <SiteFooter />
         {hidePlayerBar ? null : <PlayerBar />}

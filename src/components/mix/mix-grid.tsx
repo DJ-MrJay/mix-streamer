@@ -1,6 +1,7 @@
 "use client";
 
-import { SearchX } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Music2, SearchX, Video } from "lucide-react";
 import { useDeferredValue } from "react";
 
 import MixCard from "@/components/mix/mix-card";
@@ -8,6 +9,7 @@ import MixCardPlaceholder from "@/components/mix/mix-card-placeholder";
 import { useTopBarSearch } from "@/components/navigation/top-bar-provider";
 import { getHomeMixSections } from "@/lib/home-sections";
 import { getDisplayTrackInfo } from "@/lib/mix-display";
+import { getMixListHref } from "@/lib/mix-routes";
 import type { MixRecord, TracklistsBySlug } from "@/types/mix";
 
 const collapseWhitespace = (value: string) => value.replace(/\s+/g, " ").trim();
@@ -63,6 +65,19 @@ const HomeHero = () => (
     </div>
   </section>
 );
+
+const browseLinks = [
+  {
+    href: getMixListHref("audio"),
+    title: "Browse all audio mixes",
+    icon: Music2,
+  },
+  {
+    href: getMixListHref("video"),
+    title: "Browse all video mixes",
+    icon: Video,
+  },
+] as const;
 
 export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
   const { searchValue, isSearchActive, tracklistsBySlug } = useTopBarSearch();
@@ -143,11 +158,17 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
 
     return (
       <>
-        <div className="mx-[-1rem] flex gap-4 overflow-x-auto px-4 py-2 [scrollbar-width:none] [-ms-overflow-style:none] sm:hidden [&::-webkit-scrollbar]:hidden">
-          {items.map((mix) => (
+        <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth py-2 [scrollbar-width:none] [-ms-overflow-style:none] sm:hidden [&::-webkit-scrollbar]:hidden">
+          {items.map((mix, index) => (
             <div
               key={mix.id}
-              className="w-[60vw] max-w-[18rem] shrink-0 snap-start"
+              className={`w-[60vw] max-w-[18rem] shrink-0 ${
+                index === 0
+                  ? "snap-start"
+                  : index === items.length - 1
+                    ? "snap-end"
+                    : "snap-center"
+              }`}
             >
               <MixCard mix={mix} disableHoverRing={disableHoverRing} />
             </div>
@@ -192,6 +213,39 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
                   {renderSectionMixes(section.mixes, section.mobileLayout)}
                 </section>
               ))}
+
+              <section aria-labelledby="browse-archive" className="space-y-4">
+                <h2
+                  id="browse-archive"
+                  className="text-2xl font-black text-foreground"
+                >
+                  Browse the archive
+                </h2>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {browseLinks.map((link) => {
+                    const Icon = link.icon;
+
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="group flex items-center justify-between rounded-lg border border-border bg-card/80 px-4 py-4 text-foreground transition hover:bg-muted"
+                      >
+                        <span className="flex min-w-0 items-center gap-3">
+                          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-background text-muted-foreground">
+                            <Icon className="size-5" />
+                          </span>
+                          <span className="truncate text-base font-semibold">
+                            {link.title}
+                          </span>
+                        </span>
+                        <ArrowRight className="size-5 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
             </div>
           )
         ) : (

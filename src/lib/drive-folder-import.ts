@@ -18,7 +18,7 @@ type MixesImportInsertBuilder = {
 };
 type MixesImportTableClient = {
   select: (
-    columns: "drive_file_id, slug",
+    columns: "drive_file_id, slug, media_type",
   ) => PromiseLike<SupabaseManyResult<ExistingMixIdentity>>;
   insert: (values: MixInsert[]) => MixesImportInsertBuilder;
 };
@@ -34,7 +34,10 @@ type DriveFolderSource = {
   folderId: string;
 };
 
-type ExistingMixIdentity = Pick<MixRecord, "drive_file_id" | "slug">;
+type ExistingMixIdentity = Pick<
+  MixRecord,
+  "drive_file_id" | "slug" | "media_type"
+>;
 
 type ImportedMixSummary = {
   id: string;
@@ -88,6 +91,15 @@ const normalizeSlugSegment = (value: string) =>
     .replace(/&/g, " and ")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+
+const getReservedSlugsForMediaType = (
+  reservedSlugsByMediaType: Map<MixMediaType, Set<string>>,
+  mediaType: MixMediaType,
+) => {
+  const reservedSlugs = reservedSlugsByMediaType.get(mediaType) ?? new Set();
+  reservedSlugsByMediaType.set(mediaType, reservedSlugs);
+  return reservedSlugs;
+};
 
 const createUniqueSlug = (title: string, reservedSlugs: Set<string>) => {
   const baseSlug = normalizeSlugSegment(title) || "mix";
@@ -201,7 +213,9 @@ const getExistingMixIdentities = async (): Promise<ExistingMixIdentity[]> => {
   const mixesTable = getSupabaseAdmin().from(
     "mixes",
   ) as unknown as MixesImportTableClient;
-  const { data, error } = await mixesTable.select("drive_file_id, slug");
+  const { data, error } = await mixesTable.select(
+    "drive_file_id, slug, media_type",
+  );
 
   if (error) {
     throw new Error(`Failed to load existing mixes: ${error.message}`);
@@ -246,7 +260,7 @@ export const importNewMixesFromDriveFolder = async ({
   ).flat();
   const existingMixes = await getExistingMixIdentities();
   const existingDriveFileIds = new Set<string>();
-  const reservedSlugs = new Set<string>();
+  const reservedSlugsByMediaType = new Map<MixMediaType, Set<string>>();
 
   for (const mix of existingMixes) {
     if (mix.drive_file_id) {
@@ -254,7 +268,10 @@ export const importNewMixesFromDriveFolder = async ({
     }
 
     if (mix.slug) {
-      reservedSlugs.add(mix.slug);
+      getReservedSlugsForMediaType(
+        reservedSlugsByMediaType,
+        mix.media_type ?? "audio",
+      ).add(mix.slug);
     }
   }
 
@@ -288,6 +305,10 @@ export const importNewMixesFromDriveFolder = async ({
 
     existingDriveFileIds.add(file.fileId);
     const title = normalizeTitleFromFileName(file.fileName);
+    const reservedSlugs = getReservedSlugsForMediaType(
+      reservedSlugsByMediaType,
+      mediaType,
+    );
 
     rowsToInsert.push({
       title,

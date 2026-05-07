@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-import type { MixGenre } from '@/types/mix'
+import type { MixGenre, MixMediaType } from '@/types/mix'
 
 const PLAYER_SESSION_STORAGE_KEY = 'mix-streamer-player-session'
 
@@ -9,6 +9,7 @@ export interface PlayerTrack {
   title: string
   drive_file_id: string
   slug?: string | null
+  media_type?: MixMediaType | null
   cover_image_url?: string
   artist?: string | null
   album?: string | null

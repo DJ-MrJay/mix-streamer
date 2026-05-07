@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import AppImage from "@/components/ui/app-image";
 import { usePlayer } from "@/hooks/use-player";
+import { getMixHref } from "@/lib/mix-routes";
 import { Play, Pause, Loader2, Volume2, VolumeX, X } from "lucide-react";
 
 const shouldIgnorePlayerShortcut = (target: EventTarget | null) => {
@@ -220,7 +221,10 @@ export default function PlayerBar() {
     return null;
   }
 
-  const currentMixHref = currentTrack.slug ? `/mix/${currentTrack.slug}` : null;
+  const currentMixHref = getMixHref({
+    slug: currentTrack.slug ?? null,
+    media_type: currentTrack.media_type ?? "audio",
+  });
 
   return (
     <>

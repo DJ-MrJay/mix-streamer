@@ -19,6 +19,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { getMixHref } from '@/lib/mix-routes'
 
 import {
   type DriveImportActionState,
@@ -324,7 +325,10 @@ export default function MetadataSyncPanel({
                               <p className="font-medium">{mix.title}</p>
                               <p className="mt-1 text-xs text-muted-foreground">
                                 {mix.mediaType ? `${mix.mediaType} | ` : ''}
-                                {mix.slug ? `/mix/${mix.slug}` : 'No slug'}
+                                {getMixHref({
+                                  slug: mix.slug,
+                                  media_type: mix.mediaType === 'video' ? 'video' : 'audio',
+                                }) ?? 'No slug'}
                                 {mix.metadataStatus
                                   ? ` | ${mix.metadataStatus}`
                                   : ''}

@@ -45,7 +45,7 @@ export default function SiteFooter() {
   return (
     <footer
       data-player-footer
-      className="border-t border-border bg-background px-4 py-8 text-center text-muted-foreground"
+      className="border-t border-border bg-background px-4 py-6 text-center text-muted-foreground"
     >
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-2">
         <div className="flex items-center justify-center gap-4 text-xl">

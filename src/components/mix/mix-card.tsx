@@ -8,6 +8,7 @@ import { Play, Pause, Music, Headphones, Loader2, Video } from "lucide-react";
 import { useRouteLoading } from "@/components/navigation/route-loading-provider";
 import { usePlayer } from "@/hooks/use-player";
 import { getDisplayTrackInfo } from "@/lib/mix-display";
+import { getMixHref } from "@/lib/mix-routes";
 import type { MixRecord } from "@/types/mix";
 import AppImage from "@/components/ui/app-image";
 
@@ -40,7 +41,7 @@ export default function MixCard({
   const trackInfo = getDisplayTrackInfo(mix);
   const mediaType = mix.media_type ?? "audio";
   const isVideo = mediaType === "video";
-  const detailHref = mix.slug ? `/mix/${mix.slug}` : null;
+  const detailHref = getMixHref(mix);
   const playButtonLabel = isVideo
     ? `Watch ${trackInfo.title}`
     : isCurrentlyPlaying
@@ -82,6 +83,7 @@ export default function MixCard({
           title: trackInfo.title,
           drive_file_id: mix.drive_file_id,
           slug: mix.slug,
+          media_type: mediaType,
           cover_image_url: mix.cover_image_url ?? undefined,
           artist: trackInfo.artist,
           album: mix.album ?? null,

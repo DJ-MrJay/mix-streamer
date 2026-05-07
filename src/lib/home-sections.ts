@@ -100,7 +100,7 @@ const getCuratedPickMixes = (mixes: MixRecord[]) => {
   const mixesBySlug = new Map<string, MixRecord>();
 
   for (const mix of mixes) {
-    if (!mix.slug) {
+    if (!mix.slug || mix.media_type === "video") {
       continue;
     }
 
@@ -209,14 +209,6 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     title: "Tribute mixes",
     mixes: mixes.filter(isTributeMix),
     mobileLayout: "carousel",
-  });
-
-  addSection({
-    sections,
-    usedMixIds,
-    id: "more-from-the-crate",
-    title: "More from the mix crate",
-    mixes,
   });
 
   return sections;

@@ -118,7 +118,7 @@ export default function TopBarProvider({
         searchContentRef={searchResultsRef}
       />
       {isGlobalSearchActive ? (
-        <main ref={searchResultsRef} className="flex-1 pb-32">
+        <main ref={searchResultsRef} className="flex-1 pb-12">
           <MixGrid mixes={searchMixes} />
         </main>
       ) : (
