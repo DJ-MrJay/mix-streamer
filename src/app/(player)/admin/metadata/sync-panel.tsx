@@ -142,13 +142,13 @@ export default function MetadataSyncPanel({
 
                 <label className="space-y-2">
                   <span className="text-sm font-medium text-foreground">
-                    Drive audio/media folder ID
+                    Drive audio folder ID
                   </span>
                   <Input
                     type="text"
                     name="folderId"
                     defaultValue={defaultFolderId}
-                    placeholder="Defaults to GOOGLE_DRIVE_MEDIA_FOLDER_ID"
+                    placeholder="Defaults to GOOGLE_DRIVE_AUDIO_FOLDER_ID"
                   />
                 </label>
 

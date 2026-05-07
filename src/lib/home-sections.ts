@@ -146,13 +146,15 @@ const isAudioMix = (mix: MixRecord) => !isVideoMix(mix);
 export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
   const sections: HomeMixSection[] = [];
   const usedMixIds = new Set<string>();
+  const audioMixes = mixes.filter(isAudioMix);
+  const videoMixes = mixes.filter(isVideoMix);
 
   addSection({
     sections,
     usedMixIds,
     id: "latest-additions",
     title: "Latest additions",
-    mixes: mixes.filter(isAudioMix),
+    mixes: audioMixes,
     limit: LATEST_SECTION_LIMIT,
   });
 
@@ -161,7 +163,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "video-mixes",
     title: "Video mixes",
-    mixes: mixes.filter(isVideoMix),
+    mixes: videoMixes,
     limit: VIDEO_SECTION_LIMIT,
     mobileLayout: "carousel",
   });
@@ -171,7 +173,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "dj-mr-jay-picks",
     title: "Top DJ Mr. Jay picks",
-    mixes: getCuratedPickMixes(mixes),
+    mixes: getCuratedPickMixes(audioMixes),
     mobileLayout: "carousel",
   });
 
@@ -180,7 +182,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "soul-classics",
     title: "Soul classics",
-    mixes: mixes.filter(isSoulMix),
+    mixes: audioMixes.filter(isSoulMix),
     limit: SOUL_SECTION_LIMIT,
   });
 
@@ -189,7 +191,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "kenya-club-bangers-by-year",
     title: "Kenya club bangers by year",
-    mixes: sortKenyaClubBangersByYear(mixes.filter(isKenyaClubBangerMix)),
+    mixes: sortKenyaClubBangersByYear(audioMixes.filter(isKenyaClubBangerMix)),
     mobileLayout: "carousel",
   });
 
@@ -198,7 +200,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "hip-hop-and-rnb",
     title: "Hip Hop & R&B",
-    mixes: mixes.filter(isHipHopOrRnBMix),
+    mixes: audioMixes.filter(isHipHopOrRnBMix),
     limit: HIP_HOP_AND_RNB_SECTION_LIMIT,
   });
 
@@ -207,7 +209,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "tributes",
     title: "Tribute mixes",
-    mixes: mixes.filter(isTributeMix),
+    mixes: audioMixes.filter(isTributeMix),
     mobileLayout: "carousel",
   });
 

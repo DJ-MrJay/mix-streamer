@@ -191,6 +191,8 @@ export default function TopBar({
     "h-10 rounded-full border-2 bg-card/75 pr-10 pl-11 text-foreground backdrop-blur-sm placeholder:text-muted-foreground focus-visible:ring-ring/0";
   const mobileSearchExpansionClassName =
     "relative overflow-hidden transition-[width,opacity] duration-200 ease-out data-[state=closed]:pointer-events-none data-[state=closed]:w-0 data-[state=closed]:opacity-0 data-[state=open]:w-[min(16rem,calc(100vw-12rem))] data-[state=open]:opacity-100";
+  const mobileSearchWrapperClassName =
+    "relative h-10 transition-[width] duration-200 ease-out sm:hidden";
 
   const themeToggleLabel =
     theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
@@ -227,7 +229,7 @@ export default function TopBar({
 
           <div className="ml-auto flex items-center gap-2">
             {searchEnabled ? (
-              <div ref={searchAreaRef} className="contents sm:relative">
+              <div ref={searchAreaRef} className="flex items-center gap-2">
                 <div className="hidden items-center justify-end gap-2 sm:flex">
                   <div
                     data-state={isDesktopSearchOpen ? "open" : "closed"}
@@ -270,47 +272,58 @@ export default function TopBar({
                 </div>
 
                 <div
-                  id={mobileSearchId}
                   data-state={isMobileSearchOpen ? "open" : "closed"}
-                  aria-hidden={!isMobileSearchOpen}
-                  className={`${mobileSearchExpansionClassName} sm:hidden`}
+                  className={`${mobileSearchWrapperClassName} ${
+                    isMobileSearchOpen
+                      ? "w-[min(18rem,calc(100vw-8rem))]"
+                      : "w-10"
+                  }`}
                 >
-                  <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    ref={mobileSearchRef}
-                    value={searchValue}
-                    onChange={(event) =>
-                      onSearchValueChange?.(event.target.value)
-                    }
-                    onKeyDown={handleSearchInputKeyDown}
-                    placeholder="Search title, artist, or genre"
-                    className={searchInputClassName}
-                    aria-label="Search mixes"
-                    tabIndex={isMobileSearchOpen ? 0 : -1}
-                  />
+                  <div
+                    id={mobileSearchId}
+                    aria-hidden={!isMobileSearchOpen}
+                    className={`${mobileSearchExpansionClassName} absolute top-0 right-0 h-full data-[state=open]:w-full`}
+                  >
+                    <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      ref={mobileSearchRef}
+                      value={searchValue}
+                      onChange={(event) =>
+                        onSearchValueChange?.(event.target.value)
+                      }
+                      onKeyDown={handleSearchInputKeyDown}
+                      placeholder="Search title, artist, or genre"
+                      className={searchInputClassName}
+                      aria-label="Search mixes"
+                      tabIndex={isMobileSearchOpen ? 0 : -1}
+                    />
+                    <button
+                      type="button"
+                      aria-label={searchValue ? "Clear search" : "Close search"}
+                      onClick={handleSearchDismiss}
+                      className="absolute top-1/2 right-3 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+                      tabIndex={isMobileSearchOpen ? 0 : -1}
+                    >
+                      <X className="size-4" />
+                    </button>
+                  </div>
+
                   <button
                     type="button"
-                    aria-label={searchValue ? "Clear search" : "Close search"}
-                    onClick={handleSearchDismiss}
-                    className="absolute top-1/2 right-3 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
-                    tabIndex={isMobileSearchOpen ? 0 : -1}
+                    className={`absolute inset-0 rounded-full bg-muted/50 p-2 transition-all hover:bg-muted ${
+                      isMobileSearchOpen
+                        ? "pointer-events-none opacity-0"
+                        : "opacity-100"
+                    }`}
+                    onClick={handleSearchButtonClick}
+                    aria-label="Search mixes"
+                    aria-controls={mobileSearchId}
+                    aria-expanded={isMobileSearchOpen}
+                    tabIndex={isMobileSearchOpen ? -1 : 0}
                   >
-                    <X className="size-4" />
+                    <Search className="size-6 text-foreground" />
                   </button>
                 </div>
-
-                <button
-                  type="button"
-                  className="rounded-full p-2 transition-colors bg-muted/50 hover:bg-muted sm:hidden"
-                  onClick={handleSearchButtonClick}
-                  aria-label={
-                    isMobileSearchOpen ? "Close search" : "Search mixes"
-                  }
-                  aria-controls={mobileSearchId}
-                  aria-expanded={isMobileSearchOpen}
-                >
-                  <Search className="size-6 text-foreground" />
-                </button>
               </div>
             ) : null}
 

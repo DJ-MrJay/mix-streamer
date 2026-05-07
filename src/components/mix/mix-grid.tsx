@@ -54,7 +54,7 @@ const HomeHero = () => (
         <p className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
           The Incredible
         </p>
-        <h1 className="mb-3 max-w-2xl text-3xl font-bold tracking-tight text-foreground md:text-5xl">
+        <h1 className="mb-3 max-w-2xl text-3xl font-black tracking-tight text-foreground md:text-5xl">
           DJ Mr. Jay Mixtapes
         </h1>
         <p className="max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
@@ -158,7 +158,7 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
 
     return (
       <>
-        <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth py-2 [scrollbar-width:none] [-ms-overflow-style:none] sm:hidden [&::-webkit-scrollbar]:hidden">
+        <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 py-2 scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] sm:hidden [&::-webkit-scrollbar]:hidden">
           {items.map((mix, index) => (
             <div
               key={mix.id}
