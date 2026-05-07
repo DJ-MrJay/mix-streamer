@@ -121,18 +121,18 @@ export default function MixCard({
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative cursor-pointer rounded-sm transition-all duration-800 ${
+      className={`group relative flex h-full cursor-pointer flex-col rounded-sm transition-all duration-800 ${
         disableHoverRing ? "" : "sm:hover:ring-6 sm:hover:ring-muted"
       } ${isCurrentTrack ? "ring-2 ring-primary/45" : ""}`}
     >
       <div
-        className={`overflow-hidden rounded-sm bg-card text-card-foreground ${
+        className={`flex h-full w-full flex-col overflow-hidden rounded-sm bg-card text-card-foreground ${
           isCurrentTrack ? "border border-primary/40" : ""
         }`}
       >
         {/* Album Art */}
         <div
-          className={`relative overflow-hidden bg-muted ${
+          className={`relative shrink-0 overflow-hidden bg-muted ${
             isVideo ? "aspect-video" : "aspect-square"
           }`}
         >

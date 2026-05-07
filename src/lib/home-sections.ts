@@ -18,6 +18,7 @@ const TIMELESS_PARTY_ANTHEMS_TITLE_PATTERN = /\btimeless party anthems\b/i;
 const TITLE_YEAR_PATTERN = /\b(19|20)\d{2}\b/;
 const HIP_HOP_AND_RNB_PATTERN = /hip[\s-]?hop|rap|r&b|rnb/;
 const SOUL_PATTERN = /\bsoul\b/;
+const TRIBUTE_TITLE_PATTERN = /\b(?:tributes?|memory)\b/i;
 const VARIOUS_ARTIST_PATTERN = /\bvarious\b/i;
 
 const getGenreText = (mix: MixRecord) =>
@@ -127,7 +128,13 @@ const isKenyaClubBangerMix = (mix: MixRecord) =>
   MIXUP_TITLE_PATTERN.test(mix.title) ||
   TIMELESS_PARTY_ANTHEMS_TITLE_PATTERN.test(mix.title);
 
+const hasTributeTitle = (mix: MixRecord) => TRIBUTE_TITLE_PATTERN.test(mix.title);
+
 const isTributeMix = (mix: MixRecord) => {
+  if (hasTributeTitle(mix)) {
+    return true;
+  }
+
   const artist = getDisplayTrackInfo(mix).artist;
 
   if (!artist) {
@@ -136,6 +143,8 @@ const isTributeMix = (mix: MixRecord) => {
 
   return !VARIOUS_ARTIST_PATTERN.test(artist);
 };
+
+const isLatestAdditionMix = (mix: MixRecord) => !isTributeMix(mix);
 
 const isSoulMix = (mix: MixRecord) => SOUL_PATTERN.test(getGenreText(mix));
 
@@ -154,7 +163,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "latest-additions",
     title: "Latest additions",
-    mixes: audioMixes,
+    mixes: audioMixes.filter(isLatestAdditionMix),
     limit: LATEST_SECTION_LIMIT,
   });
 

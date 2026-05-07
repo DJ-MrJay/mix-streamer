@@ -219,7 +219,7 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
                   id="browse-archive"
                   className="text-2xl font-black text-foreground"
                 >
-                  Browse the archive
+                  Browse the crates
                 </h2>
 
                 <div className="grid gap-4 sm:grid-cols-2">
