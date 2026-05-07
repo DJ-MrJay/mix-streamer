@@ -281,6 +281,7 @@ export default function TopBar({
                 >
                   <div
                     id={mobileSearchId}
+                    data-state={isMobileSearchOpen ? "open" : "closed"}
                     aria-hidden={!isMobileSearchOpen}
                     className={`${mobileSearchExpansionClassName} absolute top-0 right-0 h-full data-[state=open]:w-full`}
                   >
