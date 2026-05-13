@@ -1,15 +1,31 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import MixRouteLoader from "@/components/navigation/mix-route-loader";
 
+type StartRouteLoadingOptions = {
+  immediate?: boolean;
+};
+
 type RouteLoadingContextValue = {
-  startRouteLoading: () => void;
+  startRouteLoading: (
+    description?: string,
+    options?: StartRouteLoadingOptions,
+  ) => void;
 };
 
 const RouteLoadingContext = createContext<RouteLoadingContextValue | null>(null);
 const NAVIGATION_FEEDBACK_DELAY_MS = 120;
+const DEFAULT_ROUTE_LOADING_DESCRIPTION = "Getting page ready...";
 
 export function useRouteLoading() {
   const context = useContext(RouteLoadingContext);
@@ -26,8 +42,13 @@ export default function RouteLoadingProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const previousPathnameRef = useRef(pathname);
   const timeoutRef = useRef<number | null>(null);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
+  const [loadingDescription, setLoadingDescription] = useState(
+    DEFAULT_ROUTE_LOADING_DESCRIPTION,
+  );
 
   const clearPendingTimer = useCallback(() => {
     if (timeoutRef.current !== null) {
@@ -41,13 +62,44 @@ export default function RouteLoadingProvider({
     setIsRouteLoading(false);
   }, [clearPendingTimer]);
 
-  const startRouteLoading = useCallback(() => {
-    clearPendingTimer();
-    timeoutRef.current = window.setTimeout(() => {
-      setIsRouteLoading(true);
-      timeoutRef.current = null;
-    }, NAVIGATION_FEEDBACK_DELAY_MS);
-  }, [clearPendingTimer]);
+  const startRouteLoading = useCallback(
+    (
+      description = DEFAULT_ROUTE_LOADING_DESCRIPTION,
+      options?: StartRouteLoadingOptions,
+    ) => {
+      clearPendingTimer();
+      setLoadingDescription(description);
+
+      if (options?.immediate) {
+        setIsRouteLoading(true);
+        return;
+      }
+
+      timeoutRef.current = window.setTimeout(() => {
+        setIsRouteLoading(true);
+        timeoutRef.current = null;
+      }, NAVIGATION_FEEDBACK_DELAY_MS);
+    },
+    [clearPendingTimer],
+  );
+
+  useEffect(() => {
+    if (previousPathnameRef.current === pathname) {
+      return;
+    }
+
+    previousPathnameRef.current = pathname;
+    stopRouteLoading();
+  }, [pathname, stopRouteLoading]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      startRouteLoading(undefined, { immediate: true });
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [startRouteLoading]);
 
   useEffect(() => {
     return () => {
@@ -68,7 +120,8 @@ export default function RouteLoadingProvider({
           >
             <MixRouteLoader
               compact
-              description="Opening the mix page..."
+              title="Loading page"
+              description={loadingDescription}
             />
           </div>
         </div>

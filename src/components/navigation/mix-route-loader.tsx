@@ -5,12 +5,14 @@ type MixRouteLoaderProps = {
   className?: string;
   compact?: boolean;
   description?: string;
+  title?: string;
 };
 
 export default function MixRouteLoader({
   className,
   compact = false,
   description = "Getting page ready...",
+  title = "Loading mix",
 }: MixRouteLoaderProps) {
   return (
     <div
@@ -46,7 +48,7 @@ export default function MixRouteLoader({
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
           DJ Mr Jay
         </p>
-        <p className="text-base font-semibold text-foreground">Loading mix</p>
+        <p className="text-base font-semibold text-foreground">{title}</p>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
     </div>

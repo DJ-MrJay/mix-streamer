@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import BackButton from "@/components/navigation/back-button";
+import ScrollToTop from "@/components/navigation/scroll-to-top";
 import PlayButton from "@/components/mix/play-button";
 import ShareButton from "@/components/mix/share-button";
 import VideoPlayer from "@/components/mix/video-player";
@@ -130,6 +131,8 @@ export default async function MixDetailPage({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <ScrollToTop resetKey={`${mediaType}:${slug}`} />
+
       <div className="relative overflow-hidden border-b border-border">
         {!isVideo && mix.cover_image_url && (
           <div className="absolute inset-0">

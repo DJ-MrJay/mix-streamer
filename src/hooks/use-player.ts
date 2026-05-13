@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 
+import { AUDIO_PLAYBACK_STARTED_EVENT } from '@/lib/playback-coordination'
 import type { MixGenre, MixMediaType } from '@/types/mix'
 
 const PLAYER_SESSION_STORAGE_KEY = 'mix-streamer-player-session'
@@ -41,6 +42,7 @@ interface PlayerState {
   seek: (time: number) => void
   play: () => Promise<void>
   pause: () => void
+  stop: () => void
   hidePlayerBar: () => void
 }
 
@@ -317,12 +319,20 @@ export const usePlayer = create<PlayerState>((set, get) => {
     return audio
   }
 
+  const announceAudioPlaybackStarted = () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(AUDIO_PLAYBACK_STARTED_EVENT))
+    }
+  }
+
   const playAudio = async (audio: HTMLAudioElement) => {
     if (!isActiveAudio(audio)) {
       return
     }
 
     if (!audio.paused) {
+      announceAudioPlaybackStarted()
+
       set({
         error: null,
         isLoading: false,
@@ -337,6 +347,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
     }
 
     set({ error: null, isLoading: true })
+    announceAudioPlaybackStarted()
 
     try {
       await audio.play()
@@ -448,6 +459,23 @@ export const usePlayer = create<PlayerState>((set, get) => {
       audio.pause()
       set({ isLoading: false, isPlaying: false })
       persistPlayerSession()
+    },
+
+    stop: () => {
+      const { audio } = get()
+
+      releaseAudio(audio)
+      clearPersistedPlayerSession()
+      set({
+        currentTrack: null,
+        audio: null,
+        isPlayerBarVisible: false,
+        isPlaying: false,
+        currentTime: 0,
+        duration: 0,
+        isLoading: false,
+        error: null,
+      })
     },
 
     toggle: async () => {

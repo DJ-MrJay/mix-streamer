@@ -27,7 +27,7 @@ export default function PlayerLayoutShell({
     !hidePlayerBar && Boolean(currentTrack) && isPlayerBarVisible;
 
   return (
-    <RouteLoadingProvider key={pathname}>
+    <RouteLoadingProvider>
       <div className="flex min-h-dvh flex-col bg-background text-foreground">
         <TopBarProvider
           searchMixes={searchMixes}

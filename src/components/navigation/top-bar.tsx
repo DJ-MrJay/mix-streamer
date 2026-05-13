@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState, type RefObject } from "react";
 import { Moon, Search, SunMedium, X } from "lucide-react";
 
 import AppImage from "@/components/ui/app-image";
 import { Input } from "@/components/ui/input";
+import { useRouteLoading } from "@/components/navigation/route-loading-provider";
 import { usePlayer } from "@/hooks/use-player";
 import {
   applyThemeToDocument,
@@ -30,6 +32,8 @@ export default function TopBar({
   onSearchClose,
   searchContentRef,
 }: TopBarProps) {
+  const pathname = usePathname();
+  const { startRouteLoading } = useRouteLoading();
   const searchEnabled = typeof onSearchValueChange === "function";
   const [theme, setTheme] = useState<AppTheme>("dark");
   const [isMounted, setIsMounted] = useState(false);
@@ -148,6 +152,12 @@ export default function TopBar({
   };
 
   const handleLogoClick = () => {
+    if (pathname !== "/") {
+      startRouteLoading("Opening the home page...", {
+        immediate: true,
+      });
+    }
+
     const { isPlaying, hidePlayerBar } = usePlayer.getState();
 
     if (!isPlaying) {
