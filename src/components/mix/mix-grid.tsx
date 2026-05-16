@@ -7,6 +7,7 @@ import { useDeferredValue } from "react";
 import MixCard from "@/components/mix/mix-card";
 import MixCardPlaceholder from "@/components/mix/mix-card-placeholder";
 import { useTopBarSearch } from "@/components/navigation/top-bar-provider";
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { getHomeMixSections } from "@/lib/home-sections";
 import { getDisplayTrackInfo } from "@/lib/mix-display";
 import { getMixListHref } from "@/lib/mix-routes";
@@ -54,9 +55,12 @@ const HomeHero = () => (
         <p className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
           The Incredible
         </p>
-        <h1 className="mb-3 max-w-2xl text-3xl font-black tracking-tight text-foreground md:text-5xl">
-          DJ Mr. Jay Mixtapes
-        </h1>
+        <h1 className="sr-only">DJ Mr. Jay Mixtapes</h1>
+        <TextGenerateEffect
+          aria-hidden="true"
+          className="mb-3 max-w-2xl text-3xl font-black tracking-tight text-foreground md:text-5xl"
+          words="DJ Mr. Jay Mixtapes"
+        />
         <p className="max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
           Curated mixes for the drive, the dance floor, and every moment that
           calls for the perfect next track.
