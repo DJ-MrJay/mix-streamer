@@ -4,12 +4,14 @@ import BackButton from "@/components/navigation/back-button";
 import ScrollToTop from "@/components/navigation/scroll-to-top";
 import PlayButton from "@/components/mix/play-button";
 import ShareButton from "@/components/mix/share-button";
+import MixVersionToggle from "@/components/mix/mix-version-toggle";
 import VideoPlayer from "@/components/mix/video-player";
 import AppImage from "@/components/ui/app-image";
 import { getDisplayTrackInfo } from "@/lib/mix-display";
 import { getMixHref } from "@/lib/mix-routes";
 import {
   getMixBySlugAndMediaType,
+  getMixesBySlug,
   getSharedMixDescription,
 } from "@/lib/mixes";
 import { toAbsoluteUrl } from "@/lib/site-url";
@@ -109,7 +111,10 @@ export default async function MixDetailPage({
   slug: string;
   mediaType: MixMediaType;
 }) {
-  const mix = await getMixBySlugAndMediaType(slug, mediaType);
+  const [mix, relatedMixes] = await Promise.all([
+    getMixBySlugAndMediaType(slug, mediaType),
+    getMixesBySlug(slug),
+  ]);
 
   if (!mix) {
     return <div className="p-6 text-foreground">Mix not found</div>;
@@ -121,6 +126,13 @@ export default async function MixDetailPage({
     getSharedMixDescription(mix),
   ]);
   const isVideo = mediaType === "video";
+  const audioVersion =
+    relatedMixes.find((relatedMix) => (relatedMix.media_type ?? "audio") === "audio") ??
+    null;
+  const videoVersion =
+    relatedMixes.find((relatedMix) => relatedMix.media_type === "video") ?? null;
+  const audioVersionHref = audioVersion ? getMixHref(audioVersion) : null;
+  const videoVersionHref = videoVersion ? getMixHref(videoVersion) : null;
 
   const metadataPills = [
     isVideo ? "Video" : "Audio",
@@ -247,6 +259,11 @@ export default async function MixDetailPage({
                   <Download className="size-5" />
                   <span className="hidden sm:inline">Download</span>
                 </a>
+                <MixVersionToggle
+                  activeMediaType={mediaType}
+                  audioHref={audioVersionHref}
+                  videoHref={videoVersionHref}
+                />
                 <ShareButton title={trackInfo.title} />
               </div>
             </div>

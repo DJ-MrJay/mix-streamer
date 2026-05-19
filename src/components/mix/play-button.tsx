@@ -8,6 +8,7 @@ export default function PlayButton({ mix }: { mix: PlayerTrack }) {
     currentTrack,
     isPlaying,
     isLoading,
+    currentTime,
     setTrack,
     play,
     pause,
@@ -15,7 +16,17 @@ export default function PlayButton({ mix }: { mix: PlayerTrack }) {
 
   const isCurrent = currentTrack?.id === mix.id
   const isCurrentLoading = isCurrent && isLoading
-  const buttonLabel = isCurrent && isPlaying ? 'Pause mix' : 'Play mix'
+  const isCurrentResumable = isCurrent && !isPlaying && currentTime > 0
+  const buttonLabel = isCurrent && isPlaying
+    ? 'Pause mix'
+    : isCurrentResumable
+      ? 'Resume mix'
+      : 'Play mix'
+  const buttonText = isCurrent && isPlaying
+    ? 'Pause'
+    : isCurrentResumable
+      ? 'Resume'
+      : 'Play'
 
   const handleClick = async () => {
     if (isCurrent && isPlaying) {
@@ -41,7 +52,7 @@ export default function PlayButton({ mix }: { mix: PlayerTrack }) {
       ) : (
         <Play className="size-5" />
       )}
-      <span className="hidden sm:inline">Play</span>
+      <span className="hidden sm:inline">{buttonText}</span>
     </button>
   )
 }
