@@ -30,10 +30,14 @@ const SUPPORTED_AUDIO_EXTENSIONS = [
 const SUPPORTED_VIDEO_EXTENSIONS = [
   '.mp4',
   '.m4v',
-  '.mov',
   '.webm',
-  '.mkv',
 ] as const
+
+const SUPPORTED_VIDEO_MIME_TYPES = [
+  'video/mp4',
+  'video/x-m4v',
+  'video/webm',
+]
 
 const getPositiveInteger = (value: string | number | null | undefined) => {
   const parsedValue =
@@ -50,6 +54,11 @@ export const getMediaType = (
 ): MixMediaType | null => {
   const normalizedName = fileName.toLowerCase()
   const normalizedMimeType = mimeType.toLowerCase()
+  const isSupportedVideoFile =
+    SUPPORTED_VIDEO_MIME_TYPES.includes(normalizedMimeType) ||
+    SUPPORTED_VIDEO_EXTENSIONS.some((extension) =>
+      normalizedName.endsWith(extension)
+    )
 
   if (
     normalizedMimeType.startsWith('audio/') ||
@@ -60,12 +69,7 @@ export const getMediaType = (
     return 'audio'
   }
 
-  if (
-    normalizedMimeType.startsWith('video/') ||
-    SUPPORTED_VIDEO_EXTENSIONS.some((extension) =>
-      normalizedName.endsWith(extension)
-    )
-  ) {
+  if (isSupportedVideoFile) {
     return 'video'
   }
 

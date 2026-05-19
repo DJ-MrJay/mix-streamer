@@ -218,7 +218,7 @@ const syncVideoMixMetadata = async (
   const fileDetails = await getAudioFileDetailsByDriveFileId(mix.drive_file_id)
 
   if (fileDetails.mediaType !== 'video') {
-    throw new Error('This Drive file is not a supported video file.')
+    throw new Error('This Drive file is not a browser-supported video file.')
   }
 
   const coverImageUrl = fileDetails.thumbnailLink

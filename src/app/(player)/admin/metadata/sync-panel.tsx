@@ -483,9 +483,10 @@ export default function MetadataSyncPanel({
             <CardContent className="space-y-3 text-sm leading-relaxed text-muted-foreground">
               <p>
                 The importer scans the configured Drive audio/media folder and
-                optional video folder, filters to supported audio and video
-                files, and skips any row whose <code>drive_file_id</code> already
-                exists in Supabase.
+                optional video folder, filters to supported audio files and
+                browser-safe video files (<code>.mp4</code>, <code>.m4v</code>,
+                and <code>.webm</code>), and skips any row whose{' '}
+                <code>drive_file_id</code> already exists in Supabase.
               </p>
 
               <p>
