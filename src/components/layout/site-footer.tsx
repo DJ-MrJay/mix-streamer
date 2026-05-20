@@ -66,9 +66,9 @@ export default function SiteFooter() {
         <p className="text-xs">&copy; {year} DJ Mr. Jay Mixtapes. All rights reserved.</p>
 
         <p className="text-xs">
-          Developed and Carefully Curated by{" "}
+          Developed and carefully curated by{" "}
           <a
-            href="https://jonah-profolio.vercel.app/"
+            href="https://dj.mrjay.co.ke/"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-foreground underline-offset-4 transition hover:underline"
