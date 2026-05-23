@@ -25,7 +25,7 @@ const getMixPageDescription = (
   title: string,
   description: string | null,
   artist: string | null,
-  mediaType: MixMediaType
+  mediaType: MixMediaType,
 ) =>
   description?.trim() ||
   `${mediaType === "video" ? "Watch" : "Listen to"} ${title}${artist ? ` by ${artist}` : ""} on DJ Mr. Jay Mixtapes.`;
@@ -69,7 +69,7 @@ export async function generateMixDetailMetadata({
     trackInfo.title,
     aboutDescription,
     trackInfo.artist,
-    mediaType
+    mediaType,
   );
   const pagePath = getMixHref(mix) ?? `/${mediaType}mix/${slug}`;
   const absolutePageUrl = toAbsoluteUrl(pagePath);
@@ -127,18 +127,25 @@ export default async function MixDetailPage({
   ]);
   const isVideo = mediaType === "video";
   const audioVersion =
-    relatedMixes.find((relatedMix) => (relatedMix.media_type ?? "audio") === "audio") ??
-    null;
+    relatedMixes.find(
+      (relatedMix) => (relatedMix.media_type ?? "audio") === "audio",
+    ) ?? null;
   const videoVersion =
-    relatedMixes.find((relatedMix) => relatedMix.media_type === "video") ?? null;
+    relatedMixes.find((relatedMix) => relatedMix.media_type === "video") ??
+    null;
   const audioVersionHref = audioVersion ? getMixHref(audioVersion) : null;
   const videoVersionHref = videoVersion ? getMixHref(videoVersion) : null;
 
-  const metadataPills = [
-    isVideo ? "Video" : "Audio",
-    mix.year ? `Year: ${mix.year}` : null,
-    mix.genre?.length ? `Genre: ${mix.genre.join(", ")}` : null,
-    mix.duration ? `Length: ${formatDuration(mix.duration)}` : null,
+  // Metadata line in the format: "Audio • 2017 • Hip-Hop/Rap • 1:20:00"
+  const mediaTypeLabel = isVideo ? "Video" : "Audio";
+  const yearPart = mix.year ? `${mix.year}` : null;
+  const genrePart = mix.genre?.length ? mix.genre.join(", ") : null;
+  const durationPart = mix.duration ? formatDuration(mix.duration) : null;
+  const metadataParts = [
+    mediaTypeLabel,
+    yearPart,
+    genrePart,
+    durationPart,
   ].filter(Boolean) as string[];
 
   return (
@@ -220,19 +227,16 @@ export default async function MixDetailPage({
                 </p>
               )}
 
-              {metadataPills.length ? (
-                <div className="mb-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
-                  {metadataPills.map((pill) => (
-                    <span
-                      key={pill}
-                      className="rounded-full border border-border bg-card/80 px-3 py-1 backdrop-blur-sm"
-                    >
-                      {pill}
+              {metadataParts.length > 0 && (
+                <div className="mb-4 flex flex-wrap items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                  {metadataParts.map((part, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5">
+                      {part}
+                      {idx < metadataParts.length - 1 && <span>•</span>}
                     </span>
                   ))}
                 </div>
-              ) : null}
-
+              )}
               <div className="flex flex-wrap items-center gap-3">
                 {isVideo ? null : (
                   <PlayButton
