@@ -68,7 +68,7 @@ export default function SiteFooter() {
         <p className="text-xs">
           Developed and carefully curated by{" "}
           <a
-            href="https://dj.mrjay.co.ke/"
+            href="https://mrjay.co.ke/"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-foreground underline-offset-4 transition hover:underline"
