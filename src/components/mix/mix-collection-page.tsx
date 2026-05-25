@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import MixCard from "@/components/mix/mix-card";
 import MixCardPlaceholder from "@/components/mix/mix-card-placeholder";
 import BackButton from "@/components/navigation/back-button";
+import MixViewToggle from "@/components/mix/mix-view-toggle";
 import { sortMixesForArchive, type MixArchiveSortKey } from "@/lib/mix-sort";
 import type { MixMediaType, MixRecord } from "@/types/mix";
 
@@ -51,6 +52,7 @@ export default function MixCollectionPage({
   const sortMenuRef = useRef<HTMLDivElement | null>(null);
   const [sortKey, setSortKey] = useState<MixArchiveSortKey>("date");
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const [view, setView] = useState<"grid" | "list">("grid");
   const placeholderRules =
     mediaType === "video" ? videoPlaceholderRules : defaultPlaceholderRules;
   const sortedMixes = sortMixesForArchive(mixes, sortKey);
@@ -90,6 +92,22 @@ export default function MixCollectionPage({
     };
   }, [isSortMenuOpen]);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`mix-view:${mediaType}`);
+      if (saved === "grid" || saved === "list") {
+        setView(saved as "grid" | "list");
+      }
+    } catch {}
+  }, [mediaType]);
+
+  const handleViewChange = (next: "grid" | "list") => {
+    setView(next);
+    try {
+      localStorage.setItem(`mix-view:${mediaType}`, next);
+    } catch {}
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6">
       <div className="mb-0">
@@ -106,73 +124,85 @@ export default function MixCollectionPage({
           </p>
         </div>
 
-        <div ref={sortMenuRef} className="relative shrink-0">
-          <button
-            type="button"
-            aria-haspopup="menu"
-            aria-expanded={isSortMenuOpen}
-            aria-label="View sort options"
-            className="rounded-full bg-muted/50 p-2 transition-colors hover:bg-muted"
-            onClick={() => setIsSortMenuOpen((currentState) => !currentState)}
-          >
-            <ArrowUpDown className="size-6 text-foreground" />
-          </button>
+        <div className="relative shrink-0 flex items-center gap-2">
+          <MixViewToggle view={view} onChange={handleViewChange} />
 
-          {isSortMenuOpen ? (
-            <div
-              role="menu"
-              aria-label="Sort mixes"
-              className="absolute top-full right-0 z-20 mt-2 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-sm border border-border bg-popover text-popover-foreground shadow-2xl"
+          <div ref={sortMenuRef} className="relative">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={isSortMenuOpen}
+              aria-label="View sort options"
+              className="rounded-full bg-muted/50 p-2 transition-colors hover:bg-muted"
+              onClick={() => setIsSortMenuOpen((currentState) => !currentState)}
             >
-              <div className="border-b border-border px-4 py-3">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Sort by
-                </p>
-              </div>
+              <ArrowUpDown className="size-6 text-foreground" />
+            </button>
 
-              <div className="py-1">
-                {sortOptions.map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={sortKey === option.key}
-                    className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition hover:bg-muted ${
-                      sortKey === option.key ? "bg-muted/60" : ""
-                    }`}
-                    onClick={() => {
-                      setSortKey(option.key);
-                      setIsSortMenuOpen(false);
-                    }}
-                  >
-                    <span className="flex w-4 justify-center text-foreground">
-                      {sortKey === option.key ? (
-                        <Check className="size-4" />
-                      ) : null}
-                    </span>
-                    <span>{option.label}</span>
-                  </button>
-                ))}
+            {isSortMenuOpen ? (
+              <div
+                role="menu"
+                aria-label="Sort mixes"
+                className="absolute top-full right-0 z-20 mt-2 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-sm border border-border bg-popover text-popover-foreground shadow-2xl"
+              >
+                <div className="border-b border-border px-4 py-3">
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Sort by
+                  </p>
+                </div>
+
+                <div className="py-1">
+                  {sortOptions.map((option) => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={sortKey === option.key}
+                      className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition hover:bg-muted ${
+                        sortKey === option.key ? "bg-muted/60" : ""
+                      }`}
+                      onClick={() => {
+                        setSortKey(option.key);
+                        setIsSortMenuOpen(false);
+                      }}
+                    >
+                      <span className="flex w-4 justify-center text-foreground">
+                        {sortKey === option.key ? (
+                          <Check className="size-4" />
+                        ) : null}
+                      </span>
+                      <span>{option.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
       </header>
 
       {sortedMixes.length ? (
-        <div className={`grid gap-4 ${gridClassName}`}>
-          {sortedMixes.map((mix) => (
-            <MixCard key={mix.id} mix={mix} />
-          ))}
+        view === "grid" ? (
+          <div className={`grid gap-4 ${gridClassName}`}>
+              {sortedMixes.map((mix) => (
+                 <MixCard key={mix.id} mix={mix} />
+              ))}
 
-          {placeholders.map((placeholder) => (
-            <MixCardPlaceholder
-              key={placeholder.key}
-              mediaType={mediaType}
-              className={placeholder.className}
-            />
-          ))}
-        </div>
+            {placeholders.map((placeholder) => (
+              <MixCardPlaceholder
+                key={placeholder.key}
+                mediaType={mediaType}
+                className={placeholder.className}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex w-full flex-col gap-4">
+            {sortedMixes.map((mix) => (
+              <MixCard key={mix.id} mix={mix} compact smallCover={mediaType === "audio"} />
+            ))}
+          </div>
+        )
       ) : (
         <div className="flex min-h-56 items-center justify-center rounded-lg border border-dashed border-border bg-card/60 px-6 text-center text-sm text-muted-foreground">
           No mixes found here yet.

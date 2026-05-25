@@ -3,11 +3,13 @@ import AppImage from "@/components/ui/app-image";
 type MixCardPlaceholderProps = {
   className?: string;
   mediaType?: "audio" | "video";
+  smallCover?: boolean;
 };
 
 export default function MixCardPlaceholder({
   className = "",
   mediaType = "audio",
+  smallCover = false,
 }: MixCardPlaceholderProps) {
   const artworkAspectClass =
     mediaType === "video" ? "aspect-video" : "aspect-square";
@@ -17,7 +19,7 @@ export default function MixCardPlaceholder({
       aria-hidden="true"
       className={`pointer-events-none overflow-hidden rounded-sm bg-card/75 opacity-70 ${className}`}
     >
-      <div className={`relative ${artworkAspectClass} overflow-hidden bg-muted/40`}>
+      <div className={`relative ${artworkAspectClass} overflow-hidden bg-muted/40 ${smallCover ? "w-1/2 mx-auto" : "w-full"}`}>
         <div className="absolute inset-0 bg-gradient-to-br from-muted/70 to-card/30" />
         <div className="absolute inset-0 flex items-center justify-center">
           <AppImage

@@ -16,10 +16,14 @@ export default function MixCard({
   mix,
   disableHoverRing = false,
   showMediaBadge = false,
+  compact = false,
+  smallCover = false,
 }: {
   mix: MixRecord;
   disableHoverRing?: boolean;
   showMediaBadge?: boolean;
+  compact?: boolean;
+  smallCover?: boolean;
 }) {
   const router = useRouter();
   const { startRouteLoading } = useRouteLoading();
@@ -118,6 +122,96 @@ export default function MixCard({
 
   const duration = formatDuration(mix.duration);
 
+  if (compact) {
+    return (
+      <div
+        onClick={handleCardClick}
+        className={`group relative flex w-full cursor-pointer items-center gap-4 rounded-sm transition-all duration-300 ${
+          disableHoverRing ? "" : "sm:hover:ring-6 sm:hover:ring-muted"
+        } ${isCurrentTrack ? "ring-2 ring-primary/45" : ""}`}
+      >
+        <div
+          className={`relative overflow-hidden rounded-sm bg-card text-card-foreground ${
+            isCurrentTrack ? "border border-primary/40" : ""
+          } flex-shrink-0 ${smallCover ? "w-14 md:w-20" : "w-28 md:w-36"}`}>
+            <div className={(isVideo ? "aspect-video" : "aspect-square") + " relative overflow-hidden"}>
+            {mix.cover_image_url && !imageError ? (
+              <AppImage
+                src={mix.cover_image_url}
+                alt={mix.title}
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                className="object-cover"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div
+                className="flex h-full w-full items-center justify-center"
+                style={getGradientStyle(mix.id)}
+              >
+                {isVideo ? (
+                  <Video size={48} className="mb-2 text-white/35" />
+                ) : (
+                  <Music size={48} className="mb-2 text-white/35" />
+                )}
+              </div>
+            )}
+
+            <button
+              aria-label={playButtonLabel}
+              onClick={handlePlayClick}
+              onPointerDown={(event) => event.stopPropagation()}
+              type="button"
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <div className="rounded-full bg-primary/95 p-2 text-primary-foreground">
+                {isCurrentlyLoading ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : isCurrentlyPlaying && !isVideo ? (
+                  <Pause size={18} fill="currentColor" />
+                ) : (
+                  <Play size={18} fill="currentColor" className="ml-0" />
+                )}
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-semibold text-foreground">
+            {detailHref ? (
+              <Link
+                href={detailHref}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  startRouteLoading();
+                }}
+                className="transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                title={trackInfo.title}
+              >
+                {trackInfo.title}
+              </Link>
+            ) : (
+              <span title={trackInfo.title}>{trackInfo.title}</span>
+            )}
+          </h3>
+
+          {trackInfo.artist && (
+            <p className="truncate text-sm text-muted-foreground">{trackInfo.artist}</p>
+          )}
+        </div>
+
+        {duration && (
+          <div className="ml-2 flex-shrink-0 rounded-md bg-background/90 px-2 py-1 font-mono text-xs text-foreground">
+            {duration}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const artworkWrapperClass = `relative shrink-0 overflow-hidden bg-muted ${isVideo ? "aspect-video" : "aspect-square"} ${smallCover ? "w-1/2 mx-auto" : "w-full"}`;
+
   return (
     <div
       onClick={handleCardClick}
@@ -131,11 +225,7 @@ export default function MixCard({
         }`}
       >
         {/* Album Art */}
-        <div
-          className={`relative shrink-0 overflow-hidden bg-muted ${
-            isVideo ? "aspect-video" : "aspect-square"
-          }`}
-        >
+        <div className={artworkWrapperClass}>
           {mix.cover_image_url && !imageError ? (
             <AppImage
               src={mix.cover_image_url}
