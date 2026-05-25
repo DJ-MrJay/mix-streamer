@@ -138,8 +138,13 @@ export default async function MixDetailPage({
 
   // Metadata line in the format: "Audio • 2017 • Hip-Hop/Rap • 1:20:00"
   const mediaTypeLabel = isVideo ? "Video" : "Audio";
-  const yearPart = mix.year ? `${mix.year}` : null;
-  const genrePart = mix.genre?.length ? mix.genre.join(", ") : null;
+  // If the video mix is missing year/genre, fall back to the audio version's metadata
+  const fallbackYear = audioVersion?.year ?? null;
+  const fallbackGenre = audioVersion?.genre?.length ? audioVersion.genre : null;
+  const yearValue = mix.year ?? fallbackYear;
+  const genreArray = mix.genre?.length ? mix.genre : fallbackGenre;
+  const yearPart = yearValue ? `${yearValue}` : null;
+  const genrePart = genreArray ? genreArray.join(", ") : null;
   const durationPart = mix.duration ? formatDuration(mix.duration) : null;
   const metadataParts = [
     mediaTypeLabel,
