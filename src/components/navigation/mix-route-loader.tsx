@@ -1,6 +1,9 @@
 import AppImage from "@/components/ui/app-image";
 import { cn } from "@/lib/utils";
 
+export const DEFAULT_ROUTE_LOADER_TITLE = "Loading mix";
+export const DEFAULT_ROUTE_LOADER_DESCRIPTION = "Getting page ready...";
+
 type MixRouteLoaderProps = {
   className?: string;
   compact?: boolean;
@@ -11,8 +14,8 @@ type MixRouteLoaderProps = {
 export default function MixRouteLoader({
   className,
   compact = false,
-  description = "Getting page ready...",
-  title = "Loading mix",
+  description = DEFAULT_ROUTE_LOADER_DESCRIPTION,
+  title = DEFAULT_ROUTE_LOADER_TITLE,
 }: MixRouteLoaderProps) {
   return (
     <div

@@ -10,7 +10,8 @@ import {
   useState,
 } from "react";
 
-import MixRouteLoader from "@/components/navigation/mix-route-loader";
+import CenteredRouteLoader from "@/components/navigation/centered-route-loader";
+import { DEFAULT_ROUTE_LOADER_DESCRIPTION } from "@/components/navigation/mix-route-loader";
 
 type StartRouteLoadingOptions = {
   immediate?: boolean;
@@ -25,7 +26,7 @@ type RouteLoadingContextValue = {
 
 const RouteLoadingContext = createContext<RouteLoadingContextValue | null>(null);
 const NAVIGATION_FEEDBACK_DELAY_MS = 120;
-const DEFAULT_ROUTE_LOADING_DESCRIPTION = "Getting page ready...";
+const DEFAULT_ROUTE_LOADING_DESCRIPTION = DEFAULT_ROUTE_LOADER_DESCRIPTION;
 
 export function useRouteLoading() {
   const context = useContext(RouteLoadingContext);
@@ -112,19 +113,11 @@ export default function RouteLoadingProvider({
       {children}
 
       {isRouteLoading ? (
-        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background/72 px-4 backdrop-blur-md">
-          <div
-            aria-live="polite"
-            role="status"
-            className="rounded-3xl border border-border bg-card/92 px-6 py-5 shadow-[0_24px_48px_rgba(0,0,0,0.32)]"
-          >
-            <MixRouteLoader
-              compact
-              title="Loading page"
-              description={loadingDescription}
-            />
-          </div>
-        </div>
+        <CenteredRouteLoader
+          variant="overlay"
+          title="Loading page"
+          description={loadingDescription}
+        />
       ) : null}
     </RouteLoadingContext.Provider>
   );
