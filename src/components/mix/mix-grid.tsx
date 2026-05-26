@@ -207,12 +207,22 @@ export default function MixGrid({ mixes }: { mixes: MixRecord[] }) {
                   aria-labelledby={section.id}
                   className="space-y-4"
                 >
-                  <h2
-                    id={section.id}
-                    className="text-2xl font-black text-foreground"
-                  >
-                    {section.title}
-                  </h2>
+                  <div className="flex items-baseline justify-between gap-4">
+                    <h2
+                      id={section.id}
+                      className="text-2xl font-black text-foreground"
+                    >
+                      {section.title}
+                    </h2>
+                    {section.showAllHref ? (
+                      <Link
+                        href={section.showAllHref}
+                        className="shrink-0 text-base font-semibold text-foreground no-underline transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        Show all
+                      </Link>
+                    ) : null}
+                  </div>
 
                   {renderSectionMixes(section.mixes, section.mobileLayout)}
                 </section>

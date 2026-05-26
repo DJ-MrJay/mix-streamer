@@ -1,5 +1,6 @@
 import { DJ_MR_JAY_PICK_SLUGS } from "@/data/dj-mr-jay-picks";
 import { getDisplayTrackInfo } from "@/lib/mix-display";
+import { getMixListHref } from "@/lib/mix-routes";
 import type { MixRecord } from "@/types/mix";
 
 export type HomeMixSection = {
@@ -7,6 +8,7 @@ export type HomeMixSection = {
   title: string;
   mixes: MixRecord[];
   mobileLayout?: "grid" | "carousel";
+  showAllHref?: string;
 };
 
 const LATEST_SECTION_LIMIT = 4;
@@ -75,6 +77,7 @@ const addSection = ({
   mixes,
   limit,
   mobileLayout = "grid",
+  showAllHref,
 }: {
   sections: HomeMixSection[];
   usedMixIds: Set<string>;
@@ -83,6 +86,7 @@ const addSection = ({
   mixes: MixRecord[];
   limit?: number;
   mobileLayout?: "grid" | "carousel";
+  showAllHref?: string;
 }) => {
   const selectedMixes = takeAvailableMixes(mixes, usedMixIds, limit);
 
@@ -94,7 +98,7 @@ const addSection = ({
     usedMixIds.add(mix.id);
   }
 
-  sections.push({ id, title, mixes: selectedMixes, mobileLayout });
+  sections.push({ id, title, mixes: selectedMixes, mobileLayout, showAllHref });
 };
 
 const getCuratedPickMixes = (mixes: MixRecord[]) => {
@@ -165,6 +169,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     title: "Latest additions",
     mixes: audioMixes.filter(isLatestAdditionMix),
     limit: LATEST_SECTION_LIMIT,
+    showAllHref: getMixListHref("audio"),
   });
 
   addSection({
@@ -175,6 +180,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     mixes: videoMixes,
     limit: VIDEO_SECTION_LIMIT,
     mobileLayout: "carousel",
+    showAllHref: getMixListHref("video"),
   });
 
   addSection({
