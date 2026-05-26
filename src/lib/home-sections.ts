@@ -21,6 +21,7 @@ const TITLE_YEAR_PATTERN = /\b(19|20)\d{2}\b/;
 const HIP_HOP_AND_RNB_PATTERN = /hip[\s-]?hop|rap|r&b|rnb/;
 const SOUL_PATTERN = /\bsoul\b/;
 const TRIBUTE_TITLE_PATTERN = /\b(?:tributes?|memory)\b/i;
+const TRIBUTE_ARTIST_PATTERN = /\b(?:jay[\s-]?z|2\s*pac|tupac)\b/i;
 const VARIOUS_ARTIST_PATTERN = /\bvarious\b/i;
 
 const getGenreText = (mix: MixRecord) =>
@@ -134,8 +135,15 @@ const isKenyaClubBangerMix = (mix: MixRecord) =>
 
 const hasTributeTitle = (mix: MixRecord) => TRIBUTE_TITLE_PATTERN.test(mix.title);
 
+const isNamedTributeArtistMix = (mix: MixRecord) => {
+  const { artist, title } = getDisplayTrackInfo(mix);
+  const searchable = [mix.title, title, artist].filter(Boolean).join(" ");
+
+  return TRIBUTE_ARTIST_PATTERN.test(searchable);
+};
+
 const isTributeMix = (mix: MixRecord) => {
-  if (hasTributeTitle(mix)) {
+  if (hasTributeTitle(mix) || isNamedTributeArtistMix(mix)) {
     return true;
   }
 
@@ -147,6 +155,9 @@ const isTributeMix = (mix: MixRecord) => {
 
   return !VARIOUS_ARTIST_PATTERN.test(artist);
 };
+
+const excludeTributeMixes = (mixes: MixRecord[]) =>
+  mixes.filter((mix) => !isTributeMix(mix));
 
 const isLatestAdditionMix = (mix: MixRecord) => !isTributeMix(mix);
 
@@ -188,7 +199,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "dj-mr-jay-picks",
     title: "Top DJ Mr. Jay picks",
-    mixes: getCuratedPickMixes(audioMixes),
+    mixes: excludeTributeMixes(getCuratedPickMixes(audioMixes)),
     mobileLayout: "carousel",
   });
 
@@ -197,7 +208,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "soul-classics",
     title: "Soul classics",
-    mixes: audioMixes.filter(isSoulMix),
+    mixes: excludeTributeMixes(audioMixes.filter(isSoulMix)),
     limit: SOUL_SECTION_LIMIT,
   });
 
@@ -206,7 +217,9 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "kenya-club-bangers-by-year",
     title: "Kenya club bangers by year",
-    mixes: sortKenyaClubBangersByYear(audioMixes.filter(isKenyaClubBangerMix)),
+    mixes: sortKenyaClubBangersByYear(
+      excludeTributeMixes(audioMixes.filter(isKenyaClubBangerMix)),
+    ),
     mobileLayout: "carousel",
   });
 
@@ -215,7 +228,7 @@ export const getHomeMixSections = (mixes: MixRecord[]): HomeMixSection[] => {
     usedMixIds,
     id: "hip-hop-and-rnb",
     title: "Hip Hop & R&B",
-    mixes: audioMixes.filter(isHipHopOrRnBMix),
+    mixes: excludeTributeMixes(audioMixes.filter(isHipHopOrRnBMix)),
     limit: HIP_HOP_AND_RNB_SECTION_LIMIT,
   });
 
